@@ -1,34 +1,88 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useCallback, useEffect, useState } from 'react'
+import { invoke } from '@tauri-apps/api/core'
+import { Sidebar } from './components/Sidebar'
+import { NoteList } from './components/NoteList'
+import { Editor } from './components/Editor'
+import { Inspector } from './components/Inspector'
+import { ResizeHandle } from './components/ResizeHandle'
 import './App.css'
 
+interface VaultEntry {
+  path: string
+  filename: string
+  title: string
+  isA: string | null
+  aliases: string[]
+  belongsTo: string[]
+  relatedTo: string[]
+  status: string | null
+  owner: string | null
+  cadence: string | null
+  modifiedAt: number | null
+  fileSize: number
+}
+
+// TODO: Make vault path configurable via settings
+const TEST_VAULT_PATH = '~/vault'
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [entries, setEntries] = useState<VaultEntry[]>([])
+  const [sidebarWidth, setSidebarWidth] = useState(250)
+  const [noteListWidth, setNoteListWidth] = useState(300)
+  const [inspectorWidth, setInspectorWidth] = useState(280)
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(false)
+
+  useEffect(() => {
+    // Expand ~ to home directory for the test path
+    const path = TEST_VAULT_PATH.replace('~', '/Users/' + (import.meta.env.VITE_USER || 'user'))
+
+    invoke<VaultEntry[]>('list_vault', { path })
+      .then((result) => {
+        console.log(`Vault scan complete: ${result.length} entries found`, result)
+        setEntries(result)
+      })
+      .catch((err) => {
+        console.warn('Vault scan failed (expected if no vault at path):', err)
+      })
+  }, [])
+
+  const handleSidebarResize = useCallback((delta: number) => {
+    setSidebarWidth((w) => Math.max(150, Math.min(400, w + delta)))
+  }, [])
+
+  const handleNoteListResize = useCallback((delta: number) => {
+    setNoteListWidth((w) => Math.max(200, Math.min(500, w + delta)))
+  }, [])
+
+  const handleInspectorResize = useCallback((delta: number) => {
+    // Inspector resize is inverted: dragging left makes it wider
+    setInspectorWidth((w) => Math.max(200, Math.min(500, w - delta)))
+  }, [])
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="app">
+      <div className="app__sidebar" style={{ width: sidebarWidth }}>
+        <Sidebar />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+      <ResizeHandle onResize={handleSidebarResize} />
+      <div className="app__note-list" style={{ width: noteListWidth }}>
+        <NoteList entries={entries} />
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+      <ResizeHandle onResize={handleNoteListResize} />
+      <div className="app__editor">
+        <Editor />
+      </div>
+      {!inspectorCollapsed && <ResizeHandle onResize={handleInspectorResize} />}
+      <div
+        className="app__inspector"
+        style={{ width: inspectorCollapsed ? 40 : inspectorWidth }}
+      >
+        <Inspector
+          collapsed={inspectorCollapsed}
+          onToggle={() => setInspectorCollapsed((c) => !c)}
+        />
+      </div>
+    </div>
   )
 }
 

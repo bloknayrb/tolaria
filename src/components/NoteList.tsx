@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { VaultEntry, SidebarSelection } from '../types'
 import './NoteList.css'
 
@@ -50,20 +51,50 @@ function filterEntries(entries: VaultEntry[], selection: SidebarSelection): Vaul
   }
 }
 
+function sortByModified(a: VaultEntry, b: VaultEntry): number {
+  return (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0)
+}
+
 export function NoteList({ entries, selection }: NoteListProps) {
+  const [search, setSearch] = useState('')
+
   const filtered = filterEntries(entries, selection)
+
+  // Sort: for entity view, keep pinned first, sort children; otherwise sort all
+  let sorted: VaultEntry[]
+  if (selection.kind === 'entity' && filtered.length > 0) {
+    const [pinned, ...children] = filtered
+    sorted = [pinned, ...children.sort(sortByModified)]
+  } else {
+    sorted = [...filtered].sort(sortByModified)
+  }
+
+  // Search filter (title substring, case-insensitive)
+  const query = search.trim().toLowerCase()
+  const displayed = query
+    ? sorted.filter((e) => e.title.toLowerCase().includes(query))
+    : sorted
 
   return (
     <div className="note-list">
       <div className="note-list__header">
         <h3>Notes</h3>
-        <span className="note-list__count">{filtered.length}</span>
+        <span className="note-list__count">{displayed.length}</span>
+      </div>
+      <div className="note-list__search">
+        <input
+          type="text"
+          className="note-list__search-input"
+          placeholder="Search notes..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
       <div className="note-list__items">
-        {filtered.length === 0 ? (
+        {displayed.length === 0 ? (
           <div className="note-list__empty">No notes found</div>
         ) : (
-          filtered.map((entry, i) => (
+          displayed.map((entry, i) => (
             <div
               key={entry.path}
               className={`note-list__item${

@@ -54,3 +54,13 @@ test('clicking topic shows entries related to that topic', async ({ page }) => {
   await expect(page.locator('.note-list__title', { hasText: 'Build Laputa App' })).toBeVisible()
   await page.screenshot({ path: 'test-results/filter-topic.png' })
 })
+
+test('search bar filters by title substring', async ({ page }) => {
+  await page.fill('.note-list__search-input', 'budget')
+  await page.waitForTimeout(100)
+  const count = page.locator('.note-list__count')
+  await expect(count).toHaveText('1')
+  await expect(page.locator('.note-list__title', { hasText: 'Budget Allocation' })).toBeVisible()
+  await expect(page.locator('.note-list__title', { hasText: 'Build Laputa App' })).not.toBeVisible()
+  await page.screenshot({ path: 'test-results/search-budget.png' })
+})

@@ -29,6 +29,32 @@
   border-radius: 10px;
 }
 
+/* Search */
+.note-list__search {
+  padding: 8px 12px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.note-list__search-input {
+  width: 100%;
+  padding: 6px 10px;
+  background: #1e1e3a;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.note-list__search-input::placeholder {
+  color: #666;
+}
+
+.note-list__search-input:focus {
+  border-color: #4a4a7a;
+}
+
 .note-list__items {
   flex: 1;
 }

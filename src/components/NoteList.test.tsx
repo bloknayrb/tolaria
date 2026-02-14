@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { NoteList } from './NoteList'
 import type { VaultEntry, SidebarSelection } from '../types'
@@ -131,5 +131,33 @@ describe('NoteList', () => {
     // Build Laputa App has relatedTo: [[topic/software-development]]
     expect(screen.getByText('Build Laputa App')).toBeInTheDocument()
     expect(screen.queryByText('Facebook Ads Strategy')).not.toBeInTheDocument()
+  })
+
+  it('renders a search bar', () => {
+    render(<NoteList entries={mockEntries} selection={allSelection} />)
+    expect(screen.getByPlaceholderText('Search notes...')).toBeInTheDocument()
+  })
+
+  it('filters by search query (case-insensitive substring)', () => {
+    render(<NoteList entries={mockEntries} selection={allSelection} />)
+    const input = screen.getByPlaceholderText('Search notes...')
+    fireEvent.change(input, { target: { value: 'facebook' } })
+    expect(screen.getByText('Facebook Ads Strategy')).toBeInTheDocument()
+    expect(screen.queryByText('Build Laputa App')).not.toBeInTheDocument()
+    expect(screen.getByText('1')).toBeInTheDocument()
+  })
+
+  it('sorts entries by last modified descending', () => {
+    const entriesWithDifferentDates: VaultEntry[] = [
+      { ...mockEntries[0], modifiedAt: 1000, title: 'Oldest' },
+      { ...mockEntries[1], modifiedAt: 3000, title: 'Newest', path: '/p2' },
+      { ...mockEntries[2], modifiedAt: 2000, title: 'Middle', path: '/p3' },
+    ]
+    render(<NoteList entries={entriesWithDifferentDates} selection={allSelection} />)
+    const titles = screen.getAllByClassName
+      ? [] // fallback
+      : screen.getAllByText(/Oldest|Newest|Middle/)
+    const titleTexts = titles.map((el) => el.textContent)
+    expect(titleTexts).toEqual(['Newest', 'Middle', 'Oldest'])
   })
 })

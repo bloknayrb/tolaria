@@ -9,7 +9,7 @@ import { CreateNoteDialog, type NoteType } from './components/CreateNoteDialog'
 import { QuickOpenPalette } from './components/QuickOpenPalette'
 import { Toast } from './components/Toast'
 import { isTauri, mockInvoke, addMockEntry, updateMockContent } from './mock-tauri'
-import type { VaultEntry, SidebarSelection, GitCommit } from './types'
+import type { VaultEntry, SidebarSelection, GitCommit, ModifiedFile } from './types'
 import './App.css'
 
 // TODO: Make vault path configurable via settings
@@ -137,6 +137,7 @@ function App() {
   const [inspectorCollapsed, setInspectorCollapsed] = useState(false)
   const [allContent, setAllContent] = useState<Record<string, string>>({})
   const [gitHistory, setGitHistory] = useState<GitCommit[]>([])
+  const [modifiedFiles, setModifiedFiles] = useState<ModifiedFile[]>([])
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showQuickOpen, setShowQuickOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
@@ -176,6 +177,27 @@ function App() {
     }
     loadVault()
   }, [])
+
+  // Load modified files (git status)
+  const loadModifiedFiles = useCallback(async () => {
+    try {
+      let files: ModifiedFile[]
+      if (isTauri()) {
+        const vaultPath = TEST_VAULT_PATH.replace('~', '/Users/luca')
+        files = await invoke<ModifiedFile[]>('get_modified_files', { vaultPath })
+      } else {
+        files = await mockInvoke<ModifiedFile[]>('get_modified_files', {})
+      }
+      setModifiedFiles(files)
+    } catch (err) {
+      console.warn('Failed to load modified files:', err)
+      setModifiedFiles([])
+    }
+  }, [])
+
+  useEffect(() => {
+    loadModifiedFiles()
+  }, [loadModifiedFiles])
 
   // Load git history when active tab changes
   useEffect(() => {
@@ -467,11 +489,11 @@ function App() {
   return (
     <div className="app">
       <div className="app__sidebar" style={{ width: sidebarWidth }}>
-        <Sidebar entries={entries} selection={selection} onSelect={setSelection} onSelectNote={handleSelectNote} />
+        <Sidebar entries={entries} selection={selection} onSelect={setSelection} onSelectNote={handleSelectNote} modifiedCount={modifiedFiles.length} />
       </div>
       <ResizeHandle onResize={handleSidebarResize} />
       <div className="app__note-list" style={{ width: noteListWidth }}>
-        <NoteList entries={entries} selection={selection} selectedNote={activeTab?.entry ?? null} allContent={allContent} onSelectNote={handleSelectNote} onCreateNote={() => setShowCreateDialog(true)} />
+        <NoteList entries={entries} selection={selection} selectedNote={activeTab?.entry ?? null} allContent={allContent} modifiedFiles={modifiedFiles} onSelectNote={handleSelectNote} onCreateNote={() => setShowCreateDialog(true)} />
       </div>
       <ResizeHandle onResize={handleNoteListResize} />
       <div className="app__editor">

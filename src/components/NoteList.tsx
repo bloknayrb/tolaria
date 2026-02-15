@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { VaultEntry, SidebarSelection } from '../types'
+import type { VaultEntry, SidebarSelection, ModifiedFile } from '../types'
 import './NoteList.css'
 
 interface NoteListProps {
@@ -7,6 +7,7 @@ interface NoteListProps {
   selection: SidebarSelection
   selectedNote: VaultEntry | null
   allContent: Record<string, string>
+  modifiedFiles?: ModifiedFile[]
   onSelectNote: (entry: VaultEntry) => void
   onCreateNote: () => void
 }
@@ -139,7 +140,7 @@ function buildRelationshipGroups(entity: VaultEntry, allEntries: VaultEntry[]): 
   return groups
 }
 
-function filterEntries(entries: VaultEntry[], selection: SidebarSelection): VaultEntry[] {
+function filterEntries(entries: VaultEntry[], selection: SidebarSelection, modifiedFiles?: ModifiedFile[]): VaultEntry[] {
   switch (selection.kind) {
     case 'filter':
       switch (selection.filter) {
@@ -149,6 +150,11 @@ function filterEntries(entries: VaultEntry[], selection: SidebarSelection): Vaul
           return entries.filter((e) => e.isA === 'Person')
         case 'events':
           return entries.filter((e) => e.isA === 'Event')
+        case 'changes': {
+          if (!modifiedFiles || modifiedFiles.length === 0) return []
+          const modifiedPaths = new Set(modifiedFiles.map((f) => f.path))
+          return entries.filter((e) => modifiedPaths.has(e.path))
+        }
         case 'favorites':
           // TODO: Implement favorites (needs a "favorite" field in frontmatter)
           return []
@@ -180,7 +186,7 @@ const TYPE_PILLS = [
   { label: 'Responsibilities', type: 'Responsibility' },
 ] as const
 
-export function NoteList({ entries, selection, selectedNote, allContent, onSelectNote, onCreateNote }: NoteListProps) {
+export function NoteList({ entries, selection, selectedNote, allContent, modifiedFiles, onSelectNote, onCreateNote }: NoteListProps) {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
 
@@ -191,8 +197,18 @@ export function NoteList({ entries, selection, selectedNote, allContent, onSelec
     ? buildRelationshipGroups(selection.entry, entries)
     : []
 
+  const isChangesView = selection.kind === 'filter' && selection.filter === 'changes'
+
+  // Build a lookup for modified file status
+  const modifiedStatusMap = new Map<string, string>()
+  if (modifiedFiles) {
+    for (const f of modifiedFiles) {
+      modifiedStatusMap.set(f.path, f.status)
+    }
+  }
+
   // Non-entity view: flat filtered list
-  const filtered = isEntityView ? [] : filterEntries(entries, selection)
+  const filtered = isEntityView ? [] : filterEntries(entries, selection, modifiedFiles)
   const sorted = isEntityView ? [] : [...filtered].sort(sortByModified)
 
   // Search filter
@@ -232,25 +248,35 @@ export function NoteList({ entries, selection, selectedNote, allContent, onSelec
     ? searchedGroups.reduce((sum, g) => sum + g.entries.length, 0)
     : displayed.length
 
-  const renderItem = (entry: VaultEntry, isPinned = false) => (
-    <div
-      key={entry.path}
-      className={`note-list__item${isPinned ? ' note-list__item--pinned' : ''}${
-        selectedNote?.path === entry.path ? ' note-list__item--selected' : ''
-      }`}
-      onClick={() => onSelectNote(entry)}
-    >
-      <div className="note-list__item-top">
-        <div className="note-list__title">{entry.title}</div>
-        <span className="note-list__date">{relativeDate(getDisplayDate(entry))}</span>
+  const renderItem = (entry: VaultEntry, isPinned = false) => {
+    const gitStatus = modifiedStatusMap.get(entry.path)
+    return (
+      <div
+        key={entry.path}
+        className={`note-list__item${isPinned ? ' note-list__item--pinned' : ''}${
+          selectedNote?.path === entry.path ? ' note-list__item--selected' : ''
+        }`}
+        onClick={() => onSelectNote(entry)}
+      >
+        <div className="note-list__item-top">
+          <div className="note-list__title">
+            {isChangesView && gitStatus && (
+              <span className={`note-list__git-status note-list__git-status--${gitStatus}`}>
+                {gitStatus === 'modified' ? 'M' : gitStatus === 'added' ? 'A' : gitStatus === 'deleted' ? 'D' : gitStatus === 'untracked' ? '?' : 'R'}
+              </span>
+            )}
+            {entry.title}
+          </div>
+          <span className="note-list__date">{relativeDate(getDisplayDate(entry))}</span>
+        </div>
+        <div className="note-list__snippet">{getSnippet(allContent[entry.path])}</div>
+        <div className="note-list__meta">
+          {entry.isA && <span className={`note-list__type note-list__type--${entry.isA.toLowerCase()}`}>{entry.isA}</span>}
+          {entry.status && <span className="note-list__status">{entry.status}</span>}
+        </div>
       </div>
-      <div className="note-list__snippet">{getSnippet(allContent[entry.path])}</div>
-      <div className="note-list__meta">
-        {entry.isA && <span className={`note-list__type note-list__type--${entry.isA.toLowerCase()}`}>{entry.isA}</span>}
-        {entry.status && <span className="note-list__status">{entry.status}</span>}
-      </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="note-list">

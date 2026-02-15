@@ -7,12 +7,14 @@ interface SidebarProps {
   selection: SidebarSelection
   onSelect: (selection: SidebarSelection) => void
   onSelectNote?: (entry: VaultEntry) => void
+  modifiedCount?: number
 }
 
 const FILTERS = [
   { label: 'All Notes', filter: 'all' as const },
   { label: 'People', filter: 'people' as const },
   { label: 'Events', filter: 'events' as const },
+  { label: 'Changes', filter: 'changes' as const },
   { label: 'Favorites', filter: 'favorites' as const },
   { label: 'Trash', filter: 'trash' as const },
 ]
@@ -24,7 +26,7 @@ const SECTION_GROUPS = [
   { label: 'PROCEDURES', type: 'Procedure' },
 ] as const
 
-export function Sidebar({ entries, selection, onSelect, onSelectNote }: SidebarProps) {
+export function Sidebar({ entries, selection, onSelect, onSelectNote, modifiedCount = 0 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
@@ -84,6 +86,9 @@ export function Sidebar({ entries, selection, onSelect, onSelectNote }: SidebarP
               onClick={() => onSelect({ kind: 'filter', filter })}
             >
               {label}
+              {filter === 'changes' && modifiedCount > 0 && (
+                <span className="sidebar__badge">{modifiedCount}</span>
+              )}
             </div>
           ))}
         </div>

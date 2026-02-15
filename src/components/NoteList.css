@@ -259,6 +259,46 @@
   font-size: 10px;
 }
 
+/* Git status indicators */
+.note-list__git-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-right: 6px;
+  flex-shrink: 0;
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.note-list__git-status--modified {
+  background: rgba(255, 152, 0, 0.15);
+  color: #ff9800;
+}
+
+.note-list__git-status--added {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+}
+
+.note-list__git-status--deleted {
+  background: rgba(244, 67, 54, 0.15);
+  color: #f44336;
+}
+
+.note-list__git-status--untracked {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+}
+
+.note-list__git-status--renamed {
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196f3;
+}
+
 /* Selected & pinned states */
 .note-list__item--selected {
   background: var(--bg-selected);

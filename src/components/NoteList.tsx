@@ -11,6 +11,11 @@ interface NoteListProps {
   onCreateNote: () => void
 }
 
+interface RelationshipGroup {
+  label: string
+  entries: VaultEntry[]
+}
+
 /** Extract first ~80 chars of content after the title heading */
 function getSnippet(content: string | undefined): string {
   if (!content) return ''
@@ -60,6 +65,80 @@ function refsMatch(refs: string[], entry: VaultEntry): boolean {
   })
 }
 
+/** Resolve wikilink references to actual VaultEntry objects */
+function resolveRefs(refs: string[], entries: VaultEntry[]): VaultEntry[] {
+  return refs
+    .map((ref) => {
+      const inner = ref.replace(/^\[\[/, '').replace(/\]\]$/, '')
+      return entries.find((e) => {
+        const stem = e.path.replace(/^.*\/Laputa\//, '').replace(/\.md$/, '')
+        if (stem === inner) return true
+        const fileStem = e.filename.replace(/\.md$/, '')
+        if (fileStem === inner.split('/').pop()) return true
+        return false
+      })
+    })
+    .filter((e): e is VaultEntry => e !== undefined)
+}
+
+function sortByModified(a: VaultEntry, b: VaultEntry): number {
+  return (getDisplayDate(b) ?? 0) - (getDisplayDate(a) ?? 0)
+}
+
+/** Build relationship groups for an entity view */
+function buildRelationshipGroups(entity: VaultEntry, allEntries: VaultEntry[]): RelationshipGroup[] {
+  const groups: RelationshipGroup[] = []
+  const seen = new Set<string>([entity.path])
+
+  // 1. Children: items whose belongsTo references this entity (non-events)
+  const children = allEntries
+    .filter((e) => !seen.has(e.path) && e.isA !== 'Event' && refsMatch(e.belongsTo, entity))
+    .sort(sortByModified)
+  if (children.length > 0) {
+    groups.push({ label: 'Children', entries: children })
+    children.forEach((e) => seen.add(e.path))
+  }
+
+  // 2. Events that reference this entity (via belongsTo or relatedTo)
+  const events = allEntries
+    .filter(
+      (e) =>
+        !seen.has(e.path) &&
+        e.isA === 'Event' &&
+        (refsMatch(e.belongsTo, entity) || refsMatch(e.relatedTo, entity))
+    )
+    .sort(sortByModified)
+  if (events.length > 0) {
+    groups.push({ label: 'Events', entries: events })
+    events.forEach((e) => seen.add(e.path))
+  }
+
+  // 3. Referenced By: non-event items whose relatedTo references this entity
+  const referencedBy = allEntries
+    .filter((e) => !seen.has(e.path) && e.isA !== 'Event' && refsMatch(e.relatedTo, entity))
+    .sort(sortByModified)
+  if (referencedBy.length > 0) {
+    groups.push({ label: 'Referenced By', entries: referencedBy })
+    referencedBy.forEach((e) => seen.add(e.path))
+  }
+
+  // 4. Belongs To: resolve this entity's own belongsTo references
+  const belongsTo = resolveRefs(entity.belongsTo, allEntries).filter((e) => !seen.has(e.path))
+  if (belongsTo.length > 0) {
+    groups.push({ label: 'Belongs To', entries: belongsTo })
+    belongsTo.forEach((e) => seen.add(e.path))
+  }
+
+  // 5. Related To: resolve this entity's own relatedTo references
+  const relatedTo = resolveRefs(entity.relatedTo, allEntries).filter((e) => !seen.has(e.path))
+  if (relatedTo.length > 0) {
+    groups.push({ label: 'Related To', entries: relatedTo })
+    relatedTo.forEach((e) => seen.add(e.path))
+  }
+
+  return groups
+}
+
 function filterEntries(entries: VaultEntry[], selection: SidebarSelection): VaultEntry[] {
   switch (selection.kind) {
     case 'filter':
@@ -80,22 +159,14 @@ function filterEntries(entries: VaultEntry[], selection: SidebarSelection): Vaul
       break
     case 'sectionGroup':
       return entries.filter((e) => e.isA === selection.type)
-    case 'entity': {
-      const pinned = selection.entry
-      const children = entries.filter(
-        (e) => e.path !== pinned.path && refsMatch(e.belongsTo, pinned)
-      )
-      return [pinned, ...children]
-    }
+    case 'entity':
+      // Handled separately via buildRelationshipGroups
+      return []
     case 'topic': {
       const topic = selection.entry
       return entries.filter((e) => refsMatch(e.relatedTo, topic))
     }
   }
-}
-
-function sortByModified(a: VaultEntry, b: VaultEntry): number {
-  return (getDisplayDate(b) ?? 0) - (getDisplayDate(a) ?? 0)
 }
 
 const TYPE_PILLS = [
@@ -113,19 +184,31 @@ export function NoteList({ entries, selection, selectedNote, allContent, onSelec
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
 
-  const filtered = filterEntries(entries, selection)
+  const isEntityView = selection.kind === 'entity'
 
-  // Sort: for entity view, keep pinned first, sort children; otherwise sort all
-  let sorted: VaultEntry[]
-  if (selection.kind === 'entity' && filtered.length > 0) {
-    const [pinned, ...children] = filtered
-    sorted = [pinned, ...children.sort(sortByModified)]
-  } else {
-    sorted = [...filtered].sort(sortByModified)
-  }
+  // Entity view: build relationship groups
+  const entityGroups = isEntityView
+    ? buildRelationshipGroups(selection.entry, entries)
+    : []
 
-  // Search filter (title substring, case-insensitive)
+  // Non-entity view: flat filtered list
+  const filtered = isEntityView ? [] : filterEntries(entries, selection)
+  const sorted = isEntityView ? [] : [...filtered].sort(sortByModified)
+
+  // Search filter
   const query = search.trim().toLowerCase()
+
+  // For entity view: filter within groups
+  const searchedGroups = query
+    ? entityGroups
+        .map((g) => ({
+          ...g,
+          entries: g.entries.filter((e) => e.title.toLowerCase().includes(query)),
+        }))
+        .filter((g) => g.entries.length > 0)
+    : entityGroups
+
+  // For flat view
   const searched = query
     ? sorted.filter((e) => e.title.toLowerCase().includes(query))
     : sorted
@@ -139,17 +222,42 @@ export function NoteList({ entries, selection, selectedNote, allContent, onSelec
     }
   }
 
-  // Type filter pills
+  // Type filter pills (flat view only)
   const displayed = typeFilter
     ? searched.filter((e) => e.isA === typeFilter)
     : searched
 
+  // Total count for header
+  const totalCount = isEntityView
+    ? searchedGroups.reduce((sum, g) => sum + g.entries.length, 0)
+    : displayed.length
+
+  const renderItem = (entry: VaultEntry, isPinned = false) => (
+    <div
+      key={entry.path}
+      className={`note-list__item${isPinned ? ' note-list__item--pinned' : ''}${
+        selectedNote?.path === entry.path ? ' note-list__item--selected' : ''
+      }`}
+      onClick={() => onSelectNote(entry)}
+    >
+      <div className="note-list__item-top">
+        <div className="note-list__title">{entry.title}</div>
+        <span className="note-list__date">{relativeDate(getDisplayDate(entry))}</span>
+      </div>
+      <div className="note-list__snippet">{getSnippet(allContent[entry.path])}</div>
+      <div className="note-list__meta">
+        {entry.isA && <span className={`note-list__type note-list__type--${entry.isA.toLowerCase()}`}>{entry.isA}</span>}
+        {entry.status && <span className="note-list__status">{entry.status}</span>}
+      </div>
+    </div>
+  )
+
   return (
     <div className="note-list">
       <div className="note-list__header" data-tauri-drag-region>
-        <h3>Notes</h3>
+        <h3>{isEntityView ? selection.entry.title : 'Notes'}</h3>
         <div className="note-list__header-right">
-          <span className="note-list__count">{displayed.length}</span>
+          <span className="note-list__count">{totalCount}</span>
           <button className="note-list__add-btn" onClick={onCreateNote} title="Create new note">
             +
           </button>
@@ -164,46 +272,51 @@ export function NoteList({ entries, selection, selectedNote, allContent, onSelec
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      <div className="note-list__pills">
-        {TYPE_PILLS.filter(({ type }) => {
-          const count = typeCounts.get(type) ?? 0
-          return type === null || count > 0
-        }).map(({ label, type }) => {
-          const count = typeCounts.get(type) ?? 0
-          return (
-            <button
-              key={label}
-              className={`note-list__pill${typeFilter === type ? ' note-list__pill--active' : ''}`}
-              onClick={() => setTypeFilter(type)}
-            >
-              {label} <span className="note-list__pill-count">{count}</span>
-            </button>
-          )
-        })}
-      </div>
+      {!isEntityView && (
+        <div className="note-list__pills">
+          {TYPE_PILLS.filter(({ type }) => {
+            const count = typeCounts.get(type) ?? 0
+            return type === null || count > 0
+          }).map(({ label, type }) => {
+            const count = typeCounts.get(type) ?? 0
+            return (
+              <button
+                key={label}
+                className={`note-list__pill${typeFilter === type ? ' note-list__pill--active' : ''}`}
+                onClick={() => setTypeFilter(type)}
+              >
+                {label} <span className="note-list__pill-count">{count}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
       <div className="note-list__items">
-        {displayed.length === 0 ? (
-          <div className="note-list__empty">No notes found</div>
+        {isEntityView ? (
+          <>
+            {renderItem(selection.entry, true)}
+            {searchedGroups.length === 0 ? (
+              <div className="note-list__empty">
+                {query ? 'No matching items' : 'No related items'}
+              </div>
+            ) : (
+              searchedGroups.map((group) => (
+                <div key={group.label} className="note-list__group">
+                  <div className="note-list__group-header">
+                    <span className="note-list__group-label">{group.label}</span>
+                    <span className="note-list__group-count">{group.entries.length}</span>
+                  </div>
+                  {group.entries.map((entry) => renderItem(entry))}
+                </div>
+              ))
+            )}
+          </>
         ) : (
-          displayed.map((entry, i) => (
-            <div
-              key={entry.path}
-              className={`note-list__item${
-                selection.kind === 'entity' && i === 0 ? ' note-list__item--pinned' : ''
-              }${selectedNote?.path === entry.path ? ' note-list__item--selected' : ''}`}
-              onClick={() => onSelectNote(entry)}
-            >
-              <div className="note-list__item-top">
-                <div className="note-list__title">{entry.title}</div>
-                <span className="note-list__date">{relativeDate(getDisplayDate(entry))}</span>
-              </div>
-              <div className="note-list__snippet">{getSnippet(allContent[entry.path])}</div>
-              <div className="note-list__meta">
-                {entry.isA && <span className={`note-list__type note-list__type--${entry.isA.toLowerCase()}`}>{entry.isA}</span>}
-                {entry.status && <span className="note-list__status">{entry.status}</span>}
-              </div>
-            </div>
-          ))
+          displayed.length === 0 ? (
+            <div className="note-list__empty">No notes found</div>
+          ) : (
+            displayed.map((entry) => renderItem(entry))
+          )
         )}
       </div>
     </div>

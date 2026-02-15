@@ -114,15 +114,23 @@ describe('NoteList', () => {
     expect(container.querySelector('.note-list__count')!.textContent).toBe('1')
   })
 
-  it('shows entity pinned at top with children', () => {
+  it('shows entity pinned at top with grouped children', () => {
     const { container } = render(
       <NoteList entries={mockEntries} selection={{ kind: 'entity', entry: mockEntries[0] }} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />
     )
-    // Pinned entity + child (Facebook Ads Strategy belongsTo this project)
-    expect(screen.getByText('Build Laputa App')).toBeInTheDocument()
+    // Entity title appears in header and pinned card
+    expect(screen.getAllByText('Build Laputa App').length).toBeGreaterThanOrEqual(1)
+    // Child entry in "Children" group
     expect(screen.getByText('Facebook Ads Strategy')).toBeInTheDocument()
+    // Unrelated entries not shown
     expect(screen.queryByText('Matteo Cellini')).not.toBeInTheDocument()
+    // Group headers shown
+    expect(screen.getByText('Children')).toBeInTheDocument()
+    expect(screen.getByText('Related To')).toBeInTheDocument()
+    // Count shows grouped items (1 child + 1 related)
     expect(container.querySelector('.note-list__count')!.textContent).toBe('2')
+    // Type pills hidden in entity view
+    expect(container.querySelector('.note-list__pills')).toBeNull()
   })
 
   it('filters by topic (relatedTo references)', () => {

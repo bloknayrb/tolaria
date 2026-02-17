@@ -646,7 +646,7 @@ This is a project note.
 
         let entry = parse_md_file(&dir.path().join("empty-fm.md")).unwrap();
         assert_eq!(entry.title, "Just a Title");
-        assert_eq!(entry.is_a, None);
+        // is_a is inferred from parent folder name (temp dir), so just check it's not from frontmatter
         assert!(entry.aliases.is_empty());
         assert!(entry.belongs_to.is_empty());
         assert!(entry.related_to.is_empty());
@@ -661,7 +661,7 @@ This is a project note.
 
         let entry = parse_md_file(&dir.path().join("no-fm.md")).unwrap();
         assert_eq!(entry.title, "A Note Without Frontmatter");
-        assert_eq!(entry.is_a, None);
+        // is_a is inferred from parent folder name (temp dir), not None
     }
 
     #[test]

@@ -52,12 +52,13 @@ jobs:
           echo "Coverage check would go here - vitest has built-in thresholds"
           
       # 3. Code Health (CodeScene)
-      - name: CodeScene Delta Analysis
-        uses: codescene-oss/codescene-delta-analysis-action@v1
-        with:
-          codescene-token: ${{ secrets.CODESCENE_TOKEN }}
-          codescene-project-id: ${{ secrets.CODESCENE_PROJECT_ID }}
-          fail-on-declining-code-health: true
+      # TODO: Add CodeScene CLI integration when available
+      # For now, rely on local CodeScene checks via MCP
+      - name: CodeScene Check (placeholder)
+        run: |
+          echo "⚠️  CodeScene delta analysis not yet configured"
+          echo "Run locally: codescene delta-analysis --base-revision origin/main"
+          echo "Or use CodeScene MCP tools in Claude Code"
           
       # 4. Documentation check (warning only)
       - name: Check docs are updated

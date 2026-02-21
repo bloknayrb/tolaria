@@ -1,8 +1,9 @@
-import { useState, useMemo, memo, type ComponentType } from 'react'
+import { useState, useMemo, useRef, useEffect, memo, type ComponentType } from 'react'
 import type { VaultEntry, SidebarSelection } from '../types'
 import { cn } from '@/lib/utils'
-import { ChevronRight, ChevronDown, GitCommitHorizontal, Plus } from 'lucide-react'
+import { ChevronRight, ChevronDown, GitCommitHorizontal, Plus, SlidersHorizontal } from 'lucide-react'
 import { getTypeColor, getTypeLightColor } from '../utils/typeColors'
+import { useSectionVisibility } from '../hooks/useSectionVisibility'
 import {
   FileText,
   Star,
@@ -56,6 +57,22 @@ const BUILT_IN_TYPES = new Set(BUILT_IN_SECTION_GROUPS.map((s) => s.type))
 
 export const Sidebar = memo(function Sidebar({ entries, selection, onSelect, onSelectNote, onCreateType, onCreateNewType, modifiedCount = 0, onCommitPush }: SidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const [showCustomize, setShowCustomize] = useState(false)
+  const customizeRef = useRef<HTMLDivElement>(null)
+  const { toggleSection: toggleVisibility, isSectionVisible } = useSectionVisibility()
+
+  // Close popover on outside click
+  useEffect(() => {
+    if (!showCustomize) return
+    const handleClick = (e: MouseEvent) => {
+      if (customizeRef.current && !customizeRef.current.contains(e.target as Node)) {
+        setShowCustomize(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showCustomize])
+
   const toggleSection = (type: string) => {
     setCollapsed((prev) => ({ ...prev, [type]: !prev[type] }))
   }
@@ -232,8 +249,76 @@ export const Sidebar = memo(function Sidebar({ entries, selection, onSelect, onS
           </div>
         </div>
 
-        {/* Section Groups (built-in + custom) */}
-        {allSectionGroups.map(renderSection)}
+        {/* Customize sections button + popover */}
+        <div ref={customizeRef} style={{ position: 'relative', padding: '4px 6px 0' }}>
+          <button
+            className="flex w-full cursor-pointer select-none items-center rounded border-none bg-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            style={{ padding: '4px 16px', gap: 6 }}
+            onClick={() => setShowCustomize((v) => !v)}
+            aria-label="Customize sections"
+            title="Customize sections"
+          >
+            <SlidersHorizontal size={14} />
+            <span className="text-[12px]">Customize sections</span>
+          </button>
+
+          {showCustomize && (
+            <div
+              className="border border-border bg-popover text-popover-foreground"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 6,
+                right: 6,
+                zIndex: 50,
+                borderRadius: 8,
+                padding: '8px 0',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+              }}
+            >
+              <div className="text-[12px] font-semibold text-muted-foreground" style={{ padding: '0 12px 4px' }}>
+                Show in sidebar
+              </div>
+              {allSectionGroups.map(({ label, type, Icon }) => (
+                <button
+                  key={type}
+                  className="flex w-full cursor-pointer items-center border-none bg-transparent transition-colors hover:bg-accent"
+                  style={{ padding: '6px 12px', gap: 8 }}
+                  onClick={() => toggleVisibility(type)}
+                  aria-label={`Toggle ${label}`}
+                >
+                  <Icon size={14} style={{ color: getTypeColor(type) }} />
+                  <span className="flex-1 text-left text-[13px] text-foreground">{label}</span>
+                  <div
+                    className="flex items-center"
+                    style={{
+                      width: 32,
+                      height: 18,
+                      borderRadius: 9,
+                      padding: 2,
+                      backgroundColor: isSectionVisible(type) ? 'var(--primary)' : 'var(--muted)',
+                      justifyContent: isSectionVisible(type) ? 'flex-end' : 'flex-start',
+                      transition: 'background-color 150ms',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: 7,
+                        backgroundColor: 'white',
+                        transition: 'transform 150ms',
+                      }}
+                    />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Section Groups (built-in + custom), filtered by visibility */}
+        {allSectionGroups.filter((g) => isSectionVisible(g.type)).map(renderSection)}
       </nav>
 
       {/* Commit button — always visible */}

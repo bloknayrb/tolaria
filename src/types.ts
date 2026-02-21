@@ -10,6 +10,8 @@ export interface VaultEntry {
   owner: string | null
   cadence: string | null
   archived: boolean
+  trashed: boolean
+  trashedAt: number | null
   modifiedAt: number | null
   createdAt: number | null
   fileSize: number
@@ -37,7 +39,7 @@ export interface ModifiedFile {
 }
 
 export type SidebarSelection =
-  | { kind: 'filter'; filter: 'all' | 'favorites' | 'archived' }
+  | { kind: 'filter'; filter: 'all' | 'favorites' | 'archived' | 'trash' }
   | { kind: 'sectionGroup'; type: string }
   | { kind: 'entity'; entry: VaultEntry }
   | { kind: 'topic'; entry: VaultEntry }

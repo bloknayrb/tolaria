@@ -584,6 +584,45 @@ A **book** you're reading or have read. Track reading progress, notes, and key t
 - **Status**: Reading, Finished, Abandoned
 - **Rating**: 1-5 stars
 `,
+  // --- Trashed entries ---
+  '/Users/luca/Laputa/note/old-draft-notes.md': `---
+title: Old Draft Notes
+is_a: Note
+trashed: true
+trashed_at: ${new Date(Date.now() - 86400000 * 5).toISOString().slice(0, 10)}
+belongs_to:
+  - "[[project/26q1-laputa-app]]"
+---
+
+# Old Draft Notes
+
+Some rough draft content that is no longer relevant. Moving to trash.
+`,
+  '/Users/luca/Laputa/note/deprecated-api-notes.md': `---
+title: Deprecated API Notes
+is_a: Note
+trashed: true
+trashed_at: ${new Date(Date.now() - 86400000 * 35).toISOString().slice(0, 10)}
+---
+
+# Deprecated API Notes
+
+Old API documentation for the v1 endpoint. Replaced by v2 docs.
+`,
+  '/Users/luca/Laputa/experiment/failed-seo-experiment.md': `---
+title: Failed SEO Experiment
+is_a: Experiment
+status: Dropped
+trashed: true
+trashed_at: ${new Date(Date.now() - 86400000 * 10).toISOString().slice(0, 10)}
+related_to:
+  - "[[responsibility/grow-newsletter]]"
+---
+
+# Failed SEO Experiment
+
+Tried programmatic SEO pages. Results were negligible — trashing this.
+`,
   // --- Archived entries ---
   '/Users/luca/Laputa/project/25q3-website-redesign.md': `---
 title: Website Redesign
@@ -672,6 +711,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: 'Luca Rossi',
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000,
     createdAt: null,
     fileSize: 2048,
@@ -696,6 +737,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: 'Luca Rossi',
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 3600,
     createdAt: null,
     fileSize: 1024,
@@ -725,6 +768,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: 'Matteo Cellini',
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 7200,
     createdAt: null,
     fileSize: 890,
@@ -748,6 +793,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: 'Luca Rossi',
     cadence: 'Weekly',
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400,
     createdAt: null,
     fileSize: 512,
@@ -771,6 +818,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: 'Matteo Cellini',
     cadence: 'Weekly',
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 2,
     createdAt: null,
     fileSize: 640,
@@ -794,6 +843,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: 'Luca Rossi',
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400,
     createdAt: null,
     fileSize: 3200,
@@ -818,6 +869,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 3600 * 5,
     createdAt: null,
     fileSize: 847,
@@ -842,6 +895,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400,
     createdAt: null,
     fileSize: 560,
@@ -865,6 +920,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 7,
     createdAt: null,
     fileSize: 320,
@@ -887,6 +944,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 3600 * 2,
     createdAt: null,
     fileSize: 1200,
@@ -910,6 +969,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 30,
     createdAt: null,
     fileSize: 256,
@@ -933,6 +994,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 14,
     createdAt: null,
     fileSize: 180,
@@ -956,6 +1019,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 3,
     createdAt: null,
     fileSize: 4200,
@@ -979,6 +1044,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 7,
     createdAt: null,
     fileSize: 3800,
@@ -1003,6 +1070,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 10,
     createdAt: null,
     fileSize: 5100,
@@ -1027,6 +1096,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 90,
     createdAt: null,
     fileSize: 320,
@@ -1047,6 +1118,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 90,
     createdAt: null,
     fileSize: 280,
@@ -1067,6 +1140,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 90,
     createdAt: null,
     fileSize: 310,
@@ -1087,6 +1162,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 90,
     createdAt: null,
     fileSize: 290,
@@ -1107,6 +1184,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 90,
     createdAt: null,
     fileSize: 200,
@@ -1127,6 +1206,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 90,
     createdAt: null,
     fileSize: 180,
@@ -1147,6 +1228,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 90,
     createdAt: null,
     fileSize: 170,
@@ -1167,6 +1250,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 90,
     createdAt: null,
     fileSize: 200,
@@ -1187,6 +1272,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 90,
     createdAt: null,
     fileSize: 190,
@@ -1208,6 +1295,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 30,
     createdAt: null,
     fileSize: 250,
@@ -1228,6 +1317,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 30,
     createdAt: null,
     fileSize: 220,
@@ -1249,6 +1340,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 5,
     createdAt: null,
     fileSize: 420,
@@ -1271,12 +1364,89 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: null,
     cadence: null,
     archived: false,
+    trashed: false,
+    trashedAt: null,
     modifiedAt: Date.now() / 1000 - 86400 * 14,
     createdAt: null,
     fileSize: 380,
     snippet: 'Essential reading for anyone building distributed systems. Covers replication, partitioning, transactions.',
     relationships: {
       'Type': ['[[type/book]]'],
+    },
+    icon: null,
+    color: null,
+  },
+  // --- Trashed entries ---
+  {
+    path: '/Users/luca/Laputa/note/old-draft-notes.md',
+    filename: 'old-draft-notes.md',
+    title: 'Old Draft Notes',
+    isA: 'Note',
+    aliases: [],
+    belongsTo: ['[[project/26q1-laputa-app]]'],
+    relatedTo: [],
+    status: null,
+    owner: null,
+    cadence: null,
+    archived: false,
+    trashed: true,
+    trashedAt: Date.now() / 1000 - 86400 * 5,
+    modifiedAt: Date.now() / 1000 - 86400 * 10,
+    createdAt: null,
+    fileSize: 280,
+    snippet: 'Some rough draft content that is no longer relevant. Moving to trash.',
+    relationships: {
+      'Belongs to': ['[[project/26q1-laputa-app]]'],
+      'Type': ['[[type/note]]'],
+    },
+    icon: null,
+    color: null,
+  },
+  {
+    path: '/Users/luca/Laputa/note/deprecated-api-notes.md',
+    filename: 'deprecated-api-notes.md',
+    title: 'Deprecated API Notes',
+    isA: 'Note',
+    aliases: [],
+    belongsTo: [],
+    relatedTo: [],
+    status: null,
+    owner: null,
+    cadence: null,
+    archived: false,
+    trashed: true,
+    trashedAt: Date.now() / 1000 - 86400 * 35,
+    modifiedAt: Date.now() / 1000 - 86400 * 40,
+    createdAt: null,
+    fileSize: 190,
+    snippet: 'Old API documentation for the v1 endpoint. Replaced by v2 docs.',
+    relationships: {
+      'Type': ['[[type/note]]'],
+    },
+    icon: null,
+    color: null,
+  },
+  {
+    path: '/Users/luca/Laputa/experiment/failed-seo-experiment.md',
+    filename: 'failed-seo-experiment.md',
+    title: 'Failed SEO Experiment',
+    isA: 'Experiment',
+    aliases: [],
+    belongsTo: [],
+    relatedTo: ['[[responsibility/grow-newsletter]]'],
+    status: 'Dropped',
+    owner: 'Luca Rossi',
+    cadence: null,
+    archived: false,
+    trashed: true,
+    trashedAt: Date.now() / 1000 - 86400 * 10,
+    modifiedAt: Date.now() / 1000 - 86400 * 15,
+    createdAt: null,
+    fileSize: 340,
+    snippet: 'Tried programmatic SEO pages. Results were negligible — trashing this.',
+    relationships: {
+      'Related to': ['[[responsibility/grow-newsletter]]'],
+      'Type': ['[[type/experiment]]'],
     },
     icon: null,
     color: null,
@@ -1294,6 +1464,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: 'Luca Rossi',
     cadence: null,
     archived: true,
+    trashed: false,
+    trashedAt: null,
     icon: null,
     color: null,
     modifiedAt: Date.now() / 1000 - 86400 * 120,
@@ -1317,6 +1489,8 @@ const MOCK_ENTRIES: VaultEntry[] = [
     owner: 'Luca Rossi',
     cadence: null,
     archived: true,
+    trashed: false,
+    trashedAt: null,
     icon: null,
     color: null,
     modifiedAt: Date.now() / 1000 - 86400 * 90,

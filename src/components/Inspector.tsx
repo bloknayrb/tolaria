@@ -293,7 +293,7 @@ export function Inspector({
 
   return (
     <aside className={cn(
-      "flex flex-col overflow-y-auto border-l border-border bg-background text-foreground transition-[width] duration-200",
+      "flex flex-1 flex-col overflow-y-auto border-l border-border bg-background text-foreground transition-[width] duration-200",
       collapsed && "!w-10 !min-w-10"
     )}>
       <div className="flex items-center border-b border-border" style={{ height: 45, padding: '0 12px', gap: 8 }} data-tauri-drag-region>

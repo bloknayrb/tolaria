@@ -32,6 +32,7 @@ interface EditorProps {
   onReorderTabs?: (fromIndex: number, toIndex: number) => void
   onNavigateWikilink: (target: string) => void
   onLoadDiff?: (path: string) => Promise<string>
+  onLoadDiffAtCommit?: (path: string, commitHash: string) => Promise<string>
   isModified?: (path: string) => boolean
   onCreateNote?: () => void
   // Inspector props
@@ -188,7 +189,7 @@ function SingleEditorView({ editor, entries, onNavigateWikilink }: { editor: Ret
 }
 
 export const Editor = memo(function Editor({
-  tabs, activeTabPath, entries, onSwitchTab, onCloseTab, onReorderTabs, onNavigateWikilink, onLoadDiff, isModified, onCreateNote,
+  tabs, activeTabPath, entries, onSwitchTab, onCloseTab, onReorderTabs, onNavigateWikilink, onLoadDiff, onLoadDiffAtCommit, isModified, onCreateNote,
   inspectorCollapsed, onToggleInspector, inspectorWidth, onInspectorResize,
   inspectorEntry, inspectorContent, allContent, gitHistory,
   onUpdateFrontmatter, onDeleteProperty, onAddProperty,
@@ -381,6 +382,20 @@ export const Editor = memo(function Editor({
     }
   }, [diffMode, activeTabPath, onLoadDiff])
 
+  const handleViewCommitDiff = useCallback(async (commitHash: string) => {
+    if (!activeTabPath || !onLoadDiffAtCommit) return
+    setDiffLoading(true)
+    try {
+      const diff = await onLoadDiffAtCommit(activeTabPath, commitHash)
+      setDiffContent(diff)
+      setDiffMode(true)
+    } catch (err) {
+      console.warn('Failed to load commit diff:', err)
+    } finally {
+      setDiffLoading(false)
+    }
+  }, [activeTabPath, onLoadDiffAtCommit])
+
   const activeModified = activeTab ? isModified?.(activeTab.entry.path) ?? false : false
   const wordCount = activeTab ? countWords(activeTab.content) : 0
 
@@ -439,6 +454,7 @@ export const Editor = memo(function Editor({
         allContent={allContent}
         gitHistory={gitHistory}
         onNavigate={onNavigateWikilink}
+        onViewCommitDiff={handleViewCommitDiff}
         onUpdateFrontmatter={onUpdateFrontmatter}
         onDeleteProperty={onDeleteProperty}
         onAddProperty={onAddProperty}

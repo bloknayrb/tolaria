@@ -8721,6 +8721,389 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "archBtnNorm",
+      "x": 68,
+      "y": 5200,
+      "name": "Archive Notes — Breadcrumb button (normal note)",
+      "theme": {
+        "Mode": "Light"
+      },
+      "clip": true,
+      "width": 800,
+      "height": 45,
+      "fill": "$--background",
+      "stroke": {
+        "align": "inside",
+        "thickness": {
+          "bottom": 1
+        },
+        "fill": "$--border"
+      },
+      "padding": [
+        6,
+        16
+      ],
+      "justifyContent": "space_between",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "anInfoL",
+          "name": "infoLeft",
+          "gap": 6,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "anType",
+              "name": "breadcrumbType",
+              "fill": "$--muted-foreground",
+              "content": "Note",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "anSep",
+              "name": "breadcrumbSep",
+              "fill": "$--muted-foreground",
+              "content": "›",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "anName",
+              "name": "breadcrumbName",
+              "fill": "$--foreground",
+              "content": "My Active Note",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "anDot",
+              "name": "dotSep",
+              "fill": "$--muted-foreground",
+              "content": "·",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "anWords",
+              "name": "wordCount",
+              "fill": "$--muted-foreground",
+              "content": "1,234 words",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "anInfoR",
+          "name": "infoRight",
+          "gap": 12,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon_font",
+              "id": "anISearch",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "magnifying-glass",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            },
+            {
+              "type": "icon_font",
+              "id": "anIGit",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "git-branch",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            },
+            {
+              "type": "icon_font",
+              "id": "anICursor",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "cursor-text",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            },
+            {
+              "type": "icon_font",
+              "id": "anIAI",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "sparkle",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            },
+            {
+              "type": "frame",
+              "id": "anArchiveBtn",
+              "name": "archiveButton",
+              "gap": 4,
+              "alignItems": "center",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--primary"
+              },
+              "cornerRadius": 4,
+              "padding": [
+                2,
+                2
+              ],
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "anIArchive",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "archive",
+                  "iconFontFamily": "phosphor",
+                  "fill": "$--primary"
+                }
+              ]
+            },
+            {
+              "type": "icon_font",
+              "id": "anITrash",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "trash",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            },
+            {
+              "type": "icon_font",
+              "id": "anIMore",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "dots-three",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "archBtnArc",
+      "x": 68,
+      "y": 5300,
+      "name": "Archive Notes — Breadcrumb button (archived note, shows Unarchive)",
+      "theme": {
+        "Mode": "Light"
+      },
+      "clip": true,
+      "width": 800,
+      "height": 45,
+      "fill": "$--background",
+      "stroke": {
+        "align": "inside",
+        "thickness": {
+          "bottom": 1
+        },
+        "fill": "$--border"
+      },
+      "padding": [
+        6,
+        16
+      ],
+      "justifyContent": "space_between",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "auInfoL",
+          "name": "infoLeft",
+          "gap": 6,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "auType",
+              "name": "breadcrumbType",
+              "fill": "$--muted-foreground",
+              "content": "Note",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "auSep",
+              "name": "breadcrumbSep",
+              "fill": "$--muted-foreground",
+              "content": "›",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "auName",
+              "name": "breadcrumbName",
+              "fill": "$--foreground",
+              "content": "My Archived Note",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "auDot",
+              "name": "dotSep",
+              "fill": "$--muted-foreground",
+              "content": "·",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "auWords",
+              "name": "wordCount",
+              "fill": "$--muted-foreground",
+              "content": "567 words",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "auBadge",
+              "name": "archivedBadge",
+              "height": 16,
+              "fill": "#2563eb1a",
+              "cornerRadius": 4,
+              "padding": [
+                1,
+                4
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "auBadgeTxt",
+                  "fill": "$--primary",
+                  "content": "ARCHIVED",
+                  "fontFamily": "Inter",
+                  "fontSize": 9,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "auInfoR",
+          "name": "infoRight",
+          "gap": 12,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon_font",
+              "id": "auISearch",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "magnifying-glass",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            },
+            {
+              "type": "icon_font",
+              "id": "auIGit",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "git-branch",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            },
+            {
+              "type": "icon_font",
+              "id": "auICursor",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "cursor-text",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            },
+            {
+              "type": "icon_font",
+              "id": "auIAI",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "sparkle",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            },
+            {
+              "type": "frame",
+              "id": "auUnarchiveBtn",
+              "name": "unarchiveButton",
+              "gap": 4,
+              "alignItems": "center",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "$--primary"
+              },
+              "cornerRadius": 4,
+              "padding": [
+                2,
+                2
+              ],
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "auIUnarchive",
+                  "width": 16,
+                  "height": 16,
+                  "iconFontName": "arrow-u-up-left",
+                  "iconFontFamily": "phosphor",
+                  "fill": "$--primary"
+                }
+              ]
+            },
+            {
+              "type": "icon_font",
+              "id": "auITrash",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "trash",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            },
+            {
+              "type": "icon_font",
+              "id": "auIMore",
+              "width": 16,
+              "height": 16,
+              "iconFontName": "dots-three",
+              "iconFontFamily": "phosphor",
+              "fill": "$--muted-foreground"
+            }
+          ]
+        }
+      ]
     }
   ],
   "themes": {

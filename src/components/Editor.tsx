@@ -84,7 +84,7 @@ const WikiLink = createReactInlineContentSpec(
         <span
           className={`wikilink${isBroken ? ' wikilink--broken' : ''}`}
           data-target={target}
-          style={{ color, textDecorationColor: color }}
+          style={{ color }}
         >
           {target}
         </span>

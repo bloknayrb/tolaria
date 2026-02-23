@@ -34,7 +34,7 @@ jobs:
   build:
     name: Build (${{ matrix.arch }})
     needs: version
-    runs-on: macos-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:

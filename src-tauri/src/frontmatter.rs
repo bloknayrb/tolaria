@@ -216,7 +216,11 @@ where
 }
 
 /// Update a single frontmatter property in a markdown file.
-pub fn update_frontmatter(path: &str, key: &str, value: FrontmatterValue) -> Result<String, String> {
+pub fn update_frontmatter(
+    path: &str,
+    key: &str,
+    value: FrontmatterValue,
+) -> Result<String, String> {
     with_frontmatter(path, |content| {
         update_frontmatter_content(content, key, Some(value.clone()))
     })

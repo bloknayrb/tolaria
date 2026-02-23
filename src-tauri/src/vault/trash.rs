@@ -14,9 +14,7 @@ fn extract_trashed_at_string(data: &Option<gray_matter::Pod>) -> Option<String> 
     let gray_matter::Pod::Hash(ref map) = data.as_ref()? else {
         return None;
     };
-    let pod = map
-        .get("Trashed at")
-        .or_else(|| map.get("trashed_at"))?;
+    let pod = map.get("Trashed at").or_else(|| map.get("trashed_at"))?;
     match pod {
         gray_matter::Pod::String(s) => Some(s.clone()),
         _ => None,

@@ -9,7 +9,9 @@ pub use image::save_image;
 pub use rename::{rename_note, RenameResult};
 pub use trash::purge_trash;
 
-use parsing::{capitalize_first, contains_wikilink, extract_snippet, extract_title, parse_iso_date};
+use parsing::{
+    capitalize_first, contains_wikilink, extract_snippet, extract_title, parse_iso_date,
+};
 
 use gray_matter::engine::YAML;
 use gray_matter::Matter;
@@ -19,7 +21,6 @@ use std::fs;
 use std::path::Path;
 use std::time::UNIX_EPOCH;
 use walkdir::WalkDir;
-
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct VaultEntry {
@@ -342,13 +343,45 @@ pub fn get_note_content(path: &Path) -> Result<String, String> {
     fs::read_to_string(path).map_err(|e| format!("Failed to read {}: {}", path.display(), e))
 }
 
+fn validate_save_path(file_path: &Path, display_path: &str) -> Result<(), String> {
+    let parent_missing = file_path.parent().is_some_and(|p| !p.exists());
+    if parent_missing {
+        return Err(format!(
+            "Parent directory does not exist: {}",
+            file_path.parent().unwrap().display()
+        ));
+    }
+    let is_readonly = file_path.exists()
+        && file_path
+            .metadata()
+            .map(|m| m.permissions().readonly())
+            .unwrap_or(false);
+    if is_readonly {
+        return Err(format!("File is read-only: {}", display_path));
+    }
+    Ok(())
+}
+
+/// Write content to a note file. Validates parent directory and read-only status.
+pub fn save_note_content(path: &str, content: &str) -> Result<(), String> {
+    let file_path = Path::new(path);
+    validate_save_path(file_path, path)?;
+    fs::write(file_path, content).map_err(|e| format!("Failed to save {}: {}", path, e))
+}
+
 /// Scan a directory recursively for .md files and return VaultEntry for each.
 pub fn scan_vault(vault_path: &Path) -> Result<Vec<VaultEntry>, String> {
     if !vault_path.exists() {
-        return Err(format!("Vault path does not exist: {}", vault_path.display()));
+        return Err(format!(
+            "Vault path does not exist: {}",
+            vault_path.display()
+        ));
     }
     if !vault_path.is_dir() {
-        return Err(format!("Vault path is not a directory: {}", vault_path.display()));
+        return Err(format!(
+            "Vault path is not a directory: {}",
+            vault_path.display()
+        ));
     }
 
     let mut entries = Vec::new();

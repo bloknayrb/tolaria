@@ -73,4 +73,68 @@ describe('StatusBar', () => {
     fireEvent.click(vaultButton)
     expect(screen.queryByText('Work Vault')).not.toBeInTheDocument()
   })
+
+  it('shows "Open local folder" option in vault menu', () => {
+    render(
+      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenLocalFolder={vi.fn()} />
+    )
+    fireEvent.click(screen.getByTitle('Switch vault'))
+    expect(screen.getByText('Open local folder')).toBeInTheDocument()
+  })
+
+  it('calls onOpenLocalFolder when clicking "Open local folder"', () => {
+    const onOpenLocalFolder = vi.fn()
+    render(
+      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenLocalFolder={onOpenLocalFolder} />
+    )
+    fireEvent.click(screen.getByTitle('Switch vault'))
+    fireEvent.click(screen.getByText('Open local folder'))
+    expect(onOpenLocalFolder).toHaveBeenCalledOnce()
+  })
+
+  it('shows "Create new vault" option in vault menu', () => {
+    render(
+      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onCreateNewVault={vi.fn()} />
+    )
+    fireEvent.click(screen.getByTitle('Switch vault'))
+    expect(screen.getByText('Create new vault')).toBeInTheDocument()
+  })
+
+  it('calls onCreateNewVault when clicking "Create new vault"', () => {
+    const onCreateNewVault = vi.fn()
+    render(
+      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onCreateNewVault={onCreateNewVault} />
+    )
+    fireEvent.click(screen.getByTitle('Switch vault'))
+    fireEvent.click(screen.getByText('Create new vault'))
+    expect(onCreateNewVault).toHaveBeenCalledOnce()
+  })
+
+  it('shows all three add-vault options together', () => {
+    render(
+      <StatusBar
+        noteCount={100}
+        vaultPath="/Users/luca/Laputa"
+        vaults={vaults}
+        onSwitchVault={vi.fn()}
+        onOpenLocalFolder={vi.fn()}
+        onCreateNewVault={vi.fn()}
+        onConnectGitHub={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByTitle('Switch vault'))
+    expect(screen.getByText('Open local folder')).toBeInTheDocument()
+    expect(screen.getByText('Create new vault')).toBeInTheDocument()
+    expect(screen.getByText('Connect GitHub repo')).toBeInTheDocument()
+  })
+
+  it('closes menu after clicking "Open local folder"', () => {
+    render(
+      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenLocalFolder={vi.fn()} />
+    )
+    fireEvent.click(screen.getByTitle('Switch vault'))
+    fireEvent.click(screen.getByText('Open local folder'))
+    // Menu should close after clicking an action
+    expect(screen.queryByText('Open local folder')).not.toBeInTheDocument()
+  })
 })

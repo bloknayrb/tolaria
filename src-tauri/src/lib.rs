@@ -139,6 +139,44 @@ fn create_vault_dir(path: String) -> Result<(), String> {
     std::fs::create_dir_all(&path).map_err(|e| format!("Failed to create directory: {e}"))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_vault_dir_creates_directory() {
+        let tmp = tempfile::tempdir().unwrap();
+        let vault_path = tmp.path().join("my-new-vault");
+        assert!(!vault_path.exists());
+
+        let result = create_vault_dir(vault_path.to_string_lossy().to_string());
+        assert!(result.is_ok());
+        assert!(vault_path.is_dir());
+    }
+
+    #[test]
+    fn test_create_vault_dir_nested_path() {
+        let tmp = tempfile::tempdir().unwrap();
+        let vault_path = tmp.path().join("deep/nested/vault");
+        assert!(!vault_path.exists());
+
+        let result = create_vault_dir(vault_path.to_string_lossy().to_string());
+        assert!(result.is_ok());
+        assert!(vault_path.is_dir());
+    }
+
+    #[test]
+    fn test_create_vault_dir_existing_dir_ok() {
+        let tmp = tempfile::tempdir().unwrap();
+        let vault_path = tmp.path().join("existing");
+        std::fs::create_dir(&vault_path).unwrap();
+
+        // Calling create_vault_dir on an existing dir should succeed
+        let result = create_vault_dir(vault_path.to_string_lossy().to_string());
+        assert!(result.is_ok());
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()

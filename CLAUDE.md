@@ -109,6 +109,26 @@ If either command exits non-zero, **do not commit** until you've added tests to 
 
 Current baselines (Feb 2026): Frontend ≥70% | Rust lines ≥85% (89.8% actual), functions ≥75% (81.5% actual).
 
+### macOS / Tauri Platform Gotchas (CHECK BEFORE SUBMITTING)
+
+These bugs slip through unit tests because JSDOM doesn't simulate real macOS behavior. Verify manually or note them explicitly.
+
+**Keyboard shortcuts:**
+- `Option/Alt+N` on macOS produces special characters (e.g. `¡`, `™`), NOT `key:'1'`. Never use `e.key` to detect Alt+number combos.
+- Use `e.code` (`'Digit1'`) for layout-independent keys, or use `Cmd+N` shortcuts instead (more standard on macOS).
+- Prefer `CmdOrCtrl+N` for cross-platform shortcuts.
+
+**Tauri menu accelerators:**
+- Adding shortcut text to the menu label (`format!("{label}   Alt+1")`) is purely decorative — it does NOT register a keyboard shortcut.
+- Always use `MenuItemBuilder::new(label).id(id).accelerator("CmdOrCtrl+1").build(app)?` to register real accelerators.
+- After changing `menu.rs`, the Rust binary must recompile — test the running app, not just unit tests.
+
+**Custom macOS menu:**
+- `app.set_menu(menu)` replaces the ENTIRE menu bar. If you only add a `View` submenu, you lose the standard app menus (File, Edit, Window, Help). Include all necessary submenus or use `window.set_menu()` instead.
+
+**App focus for keyboard events:**
+- JS `window.addEventListener('keydown')` only fires when the WebView has focus. If the user is interacting with native UI elements (menus, title bar), events may not reach the JS layer.
+
 ### Code Quality
 - Prefer simple, readable code over clever abstractions
 - Don't over-engineer for future features — build what's needed now
@@ -132,6 +152,33 @@ Also run Playwright for automated verification:
 The app has a **Tauri mock layer** (`src/mock-tauri.ts`): when running in a browser (not Tauri), it returns realistic test data. This means Chrome and Playwright can test the full UI without the Rust backend.
 
 **Key rule**: passing unit tests ≠ working app. If you can't see it working AND interact with it successfully, it's not done.
+
+### Native App QA (MANDATORY for Tauri-specific features)
+
+For features involving keyboard shortcuts, menu items, or any native macOS behavior, you MUST also test in the running Tauri app — not just in Chrome. Use the `laputa-qa` skill scripts:
+
+```bash
+# Focus the running Laputa app
+bash ~/.openclaw/skills/laputa-qa/scripts/focus-app.sh laputa
+
+# Take a screenshot and verify visually
+bash ~/.openclaw/skills/laputa-qa/scripts/screenshot.sh /tmp/before.png
+
+# Test a keyboard shortcut (e.g. Cmd+1)
+bash ~/.openclaw/skills/laputa-qa/scripts/shortcut.sh "command" "1"
+sleep 0.3
+bash ~/.openclaw/skills/laputa-qa/scripts/screenshot.sh /tmp/after.png
+
+# Click at coordinates (multiply displayed pixel coords × 2.56 for retina)
+bash ~/.openclaw/skills/laputa-qa/scripts/click.sh 400 300
+```
+
+**When native QA is required:**
+- Any keyboard shortcut added/changed
+- Any Tauri menu item added/changed
+- Any feature that behaves differently in the Tauri shell vs Chrome
+
+**Required before firing the completion system event.** If QA reveals a bug, fix it first.
 
 ### Playwright for Testing & Verification
 - `npx playwright test` — runs all E2E tests

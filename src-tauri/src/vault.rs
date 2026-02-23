@@ -561,6 +561,33 @@ pub fn get_note_content(path: &str) -> Result<String, String> {
     fs::read_to_string(file_path).map_err(|e| format!("Failed to read {}: {}", path, e))
 }
 
+/// Save the full content (frontmatter + body) of a note to disk.
+pub fn save_note_content(path: &str, content: &str) -> Result<(), String> {
+    let file_path = Path::new(path);
+    validate_save_path(file_path, path)?;
+    fs::write(file_path, content)
+        .map_err(|e| format!("Failed to save {}: {}", path, e))
+}
+
+fn validate_save_path(file_path: &Path, display_path: &str) -> Result<(), String> {
+    let parent_missing = file_path.parent().is_some_and(|p| !p.exists());
+    if parent_missing {
+        return Err(format!(
+            "Parent directory does not exist: {}",
+            file_path.parent().unwrap().display()
+        ));
+    }
+    let is_readonly = file_path.exists()
+        && fs::metadata(file_path)
+            .map_err(|e| format!("Failed to read file metadata: {}", e))?
+            .permissions()
+            .readonly();
+    if is_readonly {
+        return Err(format!("File is read-only: {}", display_path));
+    }
+    Ok(())
+}
+
 /// Scan a directory recursively for .md files and return VaultEntry for each.
 pub fn scan_vault(vault_path: &str) -> Result<Vec<VaultEntry>, String> {
     let path = Path::new(vault_path);
@@ -1997,6 +2024,82 @@ References:
         let content = "# Some Type\n";
         let entry = parse_test_entry(&dir, "type/some-type.md", content);
         assert_eq!(entry.is_a, Some("Type".to_string()));
+    }
+
+    // --- save_note_content tests ---
+
+    #[test]
+    fn test_save_note_content_writes_file() {
+        let dir = TempDir::new().unwrap();
+        let file_path = dir.path().join("test.md");
+        let content = "---\nIs A: Note\n---\n# Test\n\nHello, world!";
+        // Create file first
+        create_test_file(dir.path(), "test.md", "original content");
+
+        let result = save_note_content(file_path.to_str().unwrap(), content);
+        assert!(result.is_ok());
+
+        let saved = fs::read_to_string(&file_path).unwrap();
+        assert_eq!(saved, content);
+    }
+
+    #[test]
+    fn test_save_note_content_creates_new_file() {
+        let dir = TempDir::new().unwrap();
+        let file_path = dir.path().join("new-note.md");
+        let content = "---\nIs A: Note\n---\n# New Note\n\nContent here.";
+
+        let result = save_note_content(file_path.to_str().unwrap(), content);
+        assert!(result.is_ok());
+        assert!(file_path.exists());
+
+        let saved = fs::read_to_string(&file_path).unwrap();
+        assert_eq!(saved, content);
+    }
+
+    #[test]
+    fn test_save_note_content_nonexistent_parent() {
+        let result = save_note_content("/nonexistent/parent/dir/file.md", "content");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Parent directory does not exist"));
+    }
+
+    #[test]
+    fn test_save_note_content_readonly_file() {
+        let dir = TempDir::new().unwrap();
+        let file_path = dir.path().join("readonly.md");
+        create_test_file(dir.path(), "readonly.md", "original");
+
+        // Make file read-only
+        let mut perms = fs::metadata(&file_path).unwrap().permissions();
+        perms.set_readonly(true);
+        fs::set_permissions(&file_path, perms).unwrap();
+
+        let result = save_note_content(file_path.to_str().unwrap(), "new content");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("read-only"));
+
+        // Cleanup: restore write permissions so tempdir can clean up
+        let mut perms = fs::metadata(&file_path).unwrap().permissions();
+        #[allow(clippy::permissions_set_readonly_false)]
+        perms.set_readonly(false);
+        fs::set_permissions(&file_path, perms).unwrap();
+    }
+
+    #[test]
+    fn test_save_note_content_preserves_frontmatter() {
+        let dir = TempDir::new().unwrap();
+        let file_path = dir.path().join("note.md");
+        let original = "---\nIs A: Project\nStatus: Active\n---\n# My Project\n\nOriginal body.";
+        create_test_file(dir.path(), "note.md", original);
+
+        let updated = "---\nIs A: Project\nStatus: Active\n---\n# My Project\n\nUpdated body with changes.";
+        save_note_content(file_path.to_str().unwrap(), updated).unwrap();
+
+        let saved = fs::read_to_string(&file_path).unwrap();
+        assert!(saved.contains("Is A: Project"));
+        assert!(saved.contains("Status: Active"));
+        assert!(saved.contains("Updated body with changes"));
     }
 
     // Frontmatter update/delete tests are in frontmatter.rs

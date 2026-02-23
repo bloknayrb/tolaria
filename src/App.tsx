@@ -13,6 +13,7 @@ import { GitHubVaultModal } from './components/GitHubVaultModal'
 import { useVaultLoader } from './hooks/useVaultLoader'
 import { useSettings } from './hooks/useSettings'
 import { useNoteActions, generateUntitledName } from './hooks/useNoteActions'
+import { useEditorSave } from './hooks/useEditorSave'
 import { useAppKeyboard } from './hooks/useAppKeyboard'
 import { useViewMode } from './hooks/useViewMode'
 import { useEntryActions } from './hooks/useEntryActions'
@@ -80,6 +81,12 @@ function App() {
 
   const notes = useNoteActions({ addEntry: vault.addEntry, updateContent: vault.updateContent, entries: vault.entries, setToastMessage, updateEntry: vault.updateEntry })
 
+  const { handleSave, handleContentChange, savePendingForPath } = useEditorSave({
+    updateVaultContent: vault.updateContent,
+    setTabs: notes.setTabs,
+    setToastMessage,
+  })
+
   const entryActions = useEntryActions({
     entries: vault.entries,
     updateEntry: vault.updateEntry,
@@ -126,16 +133,18 @@ function App() {
     setToastMessage(`Type "${name}" created`)
   }, [notes])
 
-  const handleRenameTab = useCallback((path: string, newTitle: string) => {
+  const handleRenameTab = useCallback(async (path: string, newTitle: string) => {
+    // Save any pending content before renaming so the file on disk is up to date
+    await savePendingForPath(path)
     notes.handleRenameNote(path, newTitle, vaultPath, vault.replaceEntry)
-  }, [notes, vaultPath, vault])
+  }, [notes, vaultPath, vault, savePendingForPath])
 
   const { setViewMode } = useViewMode()
 
   useAppKeyboard({
     onQuickOpen: () => setShowQuickOpen(true),
     onCreateNote: handleCreateNoteImmediate,
-    onSave: () => setToastMessage('Saved'),
+    onSave: handleSave,
     onOpenSettings: () => setShowSettings(true),
     onTrashNote: entryActions.handleTrashNote,
     onArchiveNote: entryActions.handleArchiveNote,
@@ -215,6 +224,7 @@ function App() {
             onArchiveNote={entryActions.handleArchiveNote}
             onUnarchiveNote={entryActions.handleUnarchiveNote}
             onRenameTab={handleRenameTab}
+            onContentChange={handleContentChange}
           />
         </div>
       </div>

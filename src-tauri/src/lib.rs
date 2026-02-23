@@ -24,6 +24,11 @@ fn get_note_content(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+fn save_note_content(path: String, content: String) -> Result<(), String> {
+    vault::save_note_content(&path, &content)
+}
+
+#[tauri::command]
 fn update_frontmatter(
     path: String,
     key: String,
@@ -165,6 +170,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             list_vault,
             get_note_content,
+            save_note_content,
             update_frontmatter,
             delete_frontmatter_property,
             rename_note,

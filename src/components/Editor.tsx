@@ -14,7 +14,7 @@ import { ResizeHandle } from './ResizeHandle'
 import { TabBar } from './TabBar'
 import { BreadcrumbBar } from './BreadcrumbBar'
 import { useEditorTheme } from '../hooks/useTheme'
-import { splitFrontmatter, preProcessWikilinks, injectWikilinks, countWords } from '../utils/wikilinks'
+import { splitFrontmatter, preProcessWikilinks, injectWikilinks, restoreWikilinksInBlocks, countWords } from '../utils/wikilinks'
 import './Editor.css'
 import './EditorTheme.css'
 
@@ -55,6 +55,7 @@ interface EditorProps {
   onArchiveNote?: (path: string) => void
   onUnarchiveNote?: (path: string) => void
   onRenameTab?: (path: string, newTitle: string) => void
+  onContentChange?: (path: string, content: string) => void
 }
 
 // --- Custom Inline Content: WikiLink ---
@@ -124,7 +125,7 @@ const schema = BlockNoteSchema.create({
 })
 
 /** Single BlockNote editor view — content is swapped via replaceBlocks */
-function SingleEditorView({ editor, entries, onNavigateWikilink }: { editor: ReturnType<typeof useCreateBlockNote>; entries: VaultEntry[]; onNavigateWikilink: (target: string) => void }) {
+function SingleEditorView({ editor, entries, onNavigateWikilink, onChange }: { editor: ReturnType<typeof useCreateBlockNote>; entries: VaultEntry[]; onNavigateWikilink: (target: string) => void; onChange?: () => void }) {
   const navigateRef = useRef(onNavigateWikilink)
   useEffect(() => { navigateRef.current = onNavigateWikilink }, [onNavigateWikilink])
   const { cssVars } = useEditorTheme()
@@ -181,6 +182,7 @@ function SingleEditorView({ editor, entries, onNavigateWikilink }: { editor: Ret
       <BlockNoteView
         editor={editor}
         theme="light"
+        onChange={onChange}
       >
         <SuggestionMenuController
           triggerCharacter="[["
@@ -201,6 +203,7 @@ export const Editor = memo(function Editor({
   onTrashNote, onRestoreNote,
   onArchiveNote, onUnarchiveNote,
   onRenameTab,
+  onContentChange,
 }: EditorProps) {
   const [diffMode, setDiffMode] = useState(false)
   const [diffContent, setDiffContent] = useState<string | null>(null)
@@ -264,6 +267,37 @@ export const Editor = memo(function Editor({
     return cleanup
   }, [editor])
 
+  // Suppress onChange during programmatic content swaps (tab switching / initial load)
+  const suppressChangeRef = useRef(false)
+
+  // Keep refs to callbacks for the onChange handler
+  const onContentChangeRef = useRef(onContentChange)
+  onContentChangeRef.current = onContentChange
+  const tabsRef = useRef(tabs)
+  tabsRef.current = tabs
+
+  // onChange handler: serialize editor blocks → markdown, reconstruct full file, call save
+  const handleEditorChange = useCallback(() => {
+    if (suppressChangeRef.current) return
+    const path = prevActivePathRef.current
+    if (!path) return
+
+    const tab = tabsRef.current.find(t => t.entry.path === path)
+    if (!tab) return
+
+    // Convert blocks → markdown, restoring wikilinks first
+    const blocks = editor.document
+    const restored = restoreWikilinksInBlocks(blocks)
+    const bodyMarkdown = editor.blocksToMarkdownLossy(restored as typeof blocks)
+
+    // Reconstruct the full file: preserve original frontmatter + title heading
+    const [frontmatter] = splitFrontmatter(tab.content)
+    const title = tab.entry.title
+    const fullContent = `${frontmatter}# ${title}\n\n${bodyMarkdown}`
+
+    onContentChangeRef.current?.(path, fullContent)
+  }, [editor])
+
   // Swap document content when active tab changes.
   // Uses queueMicrotask to defer BlockNote mutations outside React's commit phase,
   // avoiding flushSync-inside-lifecycle errors that silently prevent content from rendering.
@@ -284,6 +318,7 @@ export const Editor = memo(function Editor({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- BlockNote's PartialBlock generic is extremely complex
     const applyBlocks = (blocks: any[]) => {
+      suppressChangeRef.current = true
       try {
         const current = editor.document
         if (current.length > 0 && blocks.length > 0) {
@@ -299,6 +334,10 @@ export const Editor = memo(function Editor({
         } catch (err2) {
           console.error('Fallback also failed:', err2)
         }
+      } finally {
+        // Re-enable change detection on next microtask, after BlockNote
+        // finishes its internal state updates from the content swap
+        queueMicrotask(() => { suppressChangeRef.current = false })
       }
     }
 
@@ -532,6 +571,7 @@ export const Editor = memo(function Editor({
                 editor={editor}
                 entries={entries}
                 onNavigateWikilink={onNavigateWikilink}
+                onChange={handleEditorChange}
               />
             </div>
           )}

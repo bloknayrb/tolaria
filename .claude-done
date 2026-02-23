@@ -1,34 +1,19 @@
-# Properties Inspector: Editable vs Read-Only Distinction
+## editor-save-bug — Done
 
-## What was implemented
+### What was changed
+1. **Removed broken auto-save**: Deleted `useAutoSave` hook (debounced save) which was causing the editor to reload previous content on every keystroke.
+2. **Added explicit Cmd+S save**: New `useSaveNote` + `useEditorSave` hooks. Editor onChange buffers content in a ref; Cmd+S persists to disk. Shows "Saved" toast on success, "Nothing to save" when clean.
+3. **Fixed rename-before-save**: `handleRenameTab` now calls `savePendingForPath(path)` before executing the rename, ensuring the file on disk is up to date. No more "Failed to rename note" error.
 
-Split the Properties panel into two visually distinct sections:
+### Architecture decisions
+- **No auto-save by design**: Consistent with git-based UX. User explicitly saves with Cmd+S, then commits when ready.
+- **Pending content tracked via ref** (not state): Avoids unnecessary re-renders on every keystroke. The ref holds `{ path, content }` set by Editor onChange, read by handleSave.
+- **useEditorSave extracted from App**: Reduces App component cyclomatic complexity (CodeScene quality gate passed).
 
-### 1. Editable Properties (top section)
-- Frontmatter properties the user can modify
-- Interactive styling: `hover:bg-muted` background on row hover, cursor pointer, click-to-edit
-- Includes: Type badge, Status pill, boolean toggles, array tag pills, text fields
-- "Add property" button for user-defined properties
-
-### 2. Info Section (bottom section, separated by border)
-- Read-only derived metadata with "Info" header
-- Muted styling: `--text-muted` color for both labels and values
-- No hover states, no click interaction
-- Fields: Modified date, Created date, Word count, File size (formatted as B/KB/MB)
-
-### Other changes
-- Added `is_a` and `Is A` to SKIP_KEYS to prevent duplication (already shown via TypeRow)
-- Added `formatFileSize()` helper for human-readable file sizes
-- Created `design/properties-inspector.pen` with wireframe frames
-- Updated `docs/ABSTRACTIONS.md` with new Inspector section documentation
-
-## Commits on this branch
-1. `design: properties-inspector wireframes` — 2 frames showing editable vs read-only distinction
-2. `feat: distinguish editable from read-only properties in inspector` — main implementation + 12 new tests
-3. `fix: hide is_a/Is A from editable properties` — prevent TypeRow duplication
-4. `docs: update abstractions for properties inspector Info section`
-
-## Test coverage
-- 469 tests passing (12 new tests for this feature)
-- CodeScene quality gates: passed on all commits
-- `pnpm build`: succeeds
+### Tests
+- 471 unit tests passing (was 466 before)
+- New: `useSaveNote.test.ts` (3 tests), `useEditorSave.test.ts` (5 tests)
+- Updated: `App.test.tsx` (Cmd+S now shows "Nothing to save" when no pending content)
+- E2E: 2 tests passing (editor loads + Cmd+S shortcut works)
+- Coverage: 78.82% (above 70% threshold)
+- CodeScene quality gates: passed

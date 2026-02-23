@@ -23,17 +23,34 @@ interface InlineItem {
   [key: string]: unknown
 }
 
+type ContentTransform = (content: InlineItem[]) => InlineItem[]
+
+/** Walk blocks recursively, applying a transform to each block's inline content */
+function walkBlocks(blocks: unknown[], transform: ContentTransform, clone = false): unknown[] {
+  return (blocks as BlockLike[]).map(block => {
+    const b = clone ? { ...block } : block
+    if (b.content && Array.isArray(b.content)) {
+      b.content = transform(b.content)
+    }
+    if (b.children && Array.isArray(b.children)) {
+      b.children = walkBlocks(b.children, transform, clone) as BlockLike[]
+    }
+    return b
+  })
+}
+
 /** Walk blocks and replace placeholder text with wikilink inline content */
 export function injectWikilinks(blocks: unknown[]): unknown[] {
-  return (blocks as BlockLike[]).map(block => {
-    if (block.content && Array.isArray(block.content)) {
-      block.content = expandWikilinksInContent(block.content)
-    }
-    if (block.children && Array.isArray(block.children)) {
-      block.children = injectWikilinks(block.children) as BlockLike[]
-    }
-    return block
-  })
+  return walkBlocks(blocks, expandWikilinksInContent)
+}
+
+/**
+ * Deep-clone blocks and convert wikilink inline content back to [[target]] text.
+ * This is the reverse of injectWikilinks — used before blocksToMarkdownLossy
+ * so that wikilinks survive the markdown round-trip.
+ */
+export function restoreWikilinksInBlocks(blocks: unknown[]): unknown[] {
+  return walkBlocks(blocks, collapseWikilinksInContent, true)
 }
 
 function expandWikilinksInContent(content: InlineItem[]): InlineItem[] {
@@ -60,6 +77,18 @@ function expandWikilinksInContent(content: InlineItem[]): InlineItem[] {
     }
     if (lastIndex < text.length) {
       result.push({ ...item, text: text.slice(lastIndex) })
+    }
+  }
+  return result
+}
+
+function collapseWikilinksInContent(content: InlineItem[]): InlineItem[] {
+  const result: InlineItem[] = []
+  for (const item of content) {
+    if (item.type === 'wikilink' && item.props?.target) {
+      result.push({ type: 'text', text: `[[${item.props.target}]]` })
+    } else {
+      result.push(item)
     }
   }
   return result

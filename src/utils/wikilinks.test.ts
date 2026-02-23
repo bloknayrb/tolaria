@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { preProcessWikilinks, injectWikilinks, splitFrontmatter, countWords } from './wikilinks'
+import { preProcessWikilinks, injectWikilinks, restoreWikilinksInBlocks, splitFrontmatter, countWords } from './wikilinks'
 
 interface TestBlock {
   type?: string
@@ -194,5 +194,91 @@ describe('countWords', () => {
   it('handles content without frontmatter', () => {
     const content = 'Hello world this is four words plus three'
     expect(countWords(content)).toBe(8)
+  })
+})
+
+describe('restoreWikilinksInBlocks', () => {
+  it('converts wikilink nodes back to [[target]] text', () => {
+    const blocks = [{
+      content: [
+        { type: 'text', text: 'See ' },
+        { type: 'wikilink', props: { target: 'My Note' }, content: undefined },
+        { type: 'text', text: ' for details' },
+      ],
+    }]
+
+    const result = restoreWikilinksInBlocks(blocks) as TestBlock[]
+    expect(result[0].content).toHaveLength(3)
+    expect(result[0].content![0]).toEqual({ type: 'text', text: 'See ' })
+    expect(result[0].content![1]).toEqual({ type: 'text', text: '[[My Note]]' })
+    expect(result[0].content![2]).toEqual({ type: 'text', text: ' for details' })
+  })
+
+  it('handles multiple wikilinks in one block', () => {
+    const blocks = [{
+      content: [
+        { type: 'wikilink', props: { target: 'A' }, content: undefined },
+        { type: 'text', text: ' and ' },
+        { type: 'wikilink', props: { target: 'B' }, content: undefined },
+      ],
+    }]
+
+    const result = restoreWikilinksInBlocks(blocks) as TestBlock[]
+    expect(result[0].content![0]).toEqual({ type: 'text', text: '[[A]]' })
+    expect(result[0].content![1]).toEqual({ type: 'text', text: ' and ' })
+    expect(result[0].content![2]).toEqual({ type: 'text', text: '[[B]]' })
+  })
+
+  it('recursively processes children blocks', () => {
+    const blocks = [{
+      content: [],
+      children: [{
+        content: [
+          { type: 'wikilink', props: { target: 'Nested' }, content: undefined },
+        ],
+      }],
+    }]
+
+    const result = restoreWikilinksInBlocks(blocks) as TestBlock[]
+    expect(result[0].children![0].content![0]).toEqual({ type: 'text', text: '[[Nested]]' })
+  })
+
+  it('passes through non-wikilink content unchanged', () => {
+    const blocks = [{
+      content: [
+        { type: 'text', text: 'plain text' },
+        { type: 'link', text: 'a link', href: 'http://example.com' },
+      ],
+    }]
+
+    const result = restoreWikilinksInBlocks(blocks) as TestBlock[]
+    expect(result[0].content![0]).toEqual({ type: 'text', text: 'plain text' })
+    expect(result[0].content![1]).toEqual({ type: 'link', text: 'a link', href: 'http://example.com' })
+  })
+
+  it('handles blocks without content', () => {
+    const blocks = [{ type: 'heading', props: { level: 1 } }]
+    const result = restoreWikilinksInBlocks(blocks as unknown[]) as TestBlock[]
+    expect(result[0].type).toBe('heading')
+  })
+
+  it('is the inverse of injectWikilinks for simple cases', () => {
+    const WL_START = '\u2039WIKILINK:'
+    const WL_END = '\u203A'
+
+    // Start with placeholder text
+    const blocks = [{
+      content: [
+        { type: 'text', text: `before ${WL_START}Target${WL_END} after` },
+      ],
+    }]
+
+    // inject → restore should produce [[Target]] text
+    const injected = injectWikilinks(blocks) as TestBlock[]
+    const restored = restoreWikilinksInBlocks(injected) as TestBlock[]
+
+    // Find the text that was the wikilink
+    const texts = restored[0].content!.map(n => n.text).join('')
+    expect(texts).toContain('[[Target]]')
   })
 })

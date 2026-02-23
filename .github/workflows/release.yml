@@ -9,10 +9,6 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  APP_NAME: Laputa
-  BUNDLE_ID: com.tauri.dev
-
 jobs:
   # ─────────────────────────────────────────────────────────────
   # Phase 1: Compute the version string once
@@ -33,6 +29,7 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────
   # Phase 2: Build each architecture in parallel
+  # tauri build handles signing automatically via env vars
   # ─────────────────────────────────────────────────────────────
   build:
     name: Build (${{ matrix.arch }})
@@ -73,184 +70,85 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
-      # Stamp the computed version into tauri.conf.json and Cargo.toml
       - name: Set version
         run: |
           VERSION="${{ needs.version.outputs.version }}"
-          # tauri.conf.json
           jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json > tmp.json && mv tmp.json src-tauri/tauri.conf.json
-          # Cargo.toml
           sed -i '' "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
 
-      - name: Build frontend
-        run: pnpm build
-
-      - name: Build Tauri app
+      - name: Build Tauri app (with signing)
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         run: |
           pnpm tauri build --target ${{ matrix.target }}
 
-      # Upload the .app bundle so the merge job can lipo them together.
-      # Also upload the per-arch .tar.gz updater artifact and its .sig.
-      - name: Upload arch artifacts
+      - name: Upload .dmg
         uses: actions/upload-artifact@v4
         with:
-          name: app-${{ matrix.arch }}
-          path: |
-            src-tauri/target/${{ matrix.target }}/release/bundle/macos/${{ env.APP_NAME }}.app
+          name: dmg-${{ matrix.arch }}
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
           retention-days: 1
 
-      - name: Upload updater artifacts
+      - name: Upload updater artifacts (.tar.gz + .sig)
         uses: actions/upload-artifact@v4
         with:
           name: updater-${{ matrix.arch }}
           path: |
-            src-tauri/target/${{ matrix.target }}/release/bundle/macos/${{ env.APP_NAME }}.app.tar.gz
-            src-tauri/target/${{ matrix.target }}/release/bundle/macos/${{ env.APP_NAME }}.app.tar.gz.sig
-          retention-days: 1
-
-      - name: Upload dmg artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dmg-${{ matrix.arch }}
-          path: |
-            src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app.tar.gz.sig
           retention-days: 1
 
   # ─────────────────────────────────────────────────────────────
-  # Phase 3: Merge into universal binary, re-package, and release
+  # Phase 3: Publish GitHub Release
+  # No lipo/re-signing — use the per-arch artifacts directly
   # ─────────────────────────────────────────────────────────────
   release:
-    name: Universal binary & GitHub Release
+    name: GitHub Release
     needs: [version, build]
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # for release notes generation
+          fetch-depth: 0
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
-      - name: Create universal binary
-        run: |
-          set -euo pipefail
-          mkdir -p universal
-
-          ARM_APP="app-aarch64/${{ env.APP_NAME }}.app"
-          X86_APP="app-x86_64/${{ env.APP_NAME }}.app"
-
-          # Copy the aarch64 .app as base (preserves bundle structure)
-          cp -R "$ARM_APP" "universal/${{ env.APP_NAME }}.app"
-
-          # Find the main executable inside the .app bundle
-          EXEC_NAME="${{ env.APP_NAME }}"
-          # Tauri uses lowercase binary name
-          EXEC_NAME_LOWER=$(echo "$EXEC_NAME" | tr '[:upper:]' '[:lower:]')
-          ARM_BIN="$ARM_APP/Contents/MacOS/$EXEC_NAME_LOWER"
-          X86_BIN="$X86_APP/Contents/MacOS/$EXEC_NAME_LOWER"
-          UNI_BIN="universal/${{ env.APP_NAME }}.app/Contents/MacOS/$EXEC_NAME_LOWER"
-
-          # If the binary is the product name (case-sensitive), try that too
-          if [ ! -f "$ARM_BIN" ]; then
-            ARM_BIN="$ARM_APP/Contents/MacOS/$EXEC_NAME"
-            X86_BIN="$X86_APP/Contents/MacOS/$EXEC_NAME"
-            UNI_BIN="universal/${{ env.APP_NAME }}.app/Contents/MacOS/$EXEC_NAME"
-          fi
-
-          echo "Merging: $ARM_BIN + $X86_BIN → $UNI_BIN"
-          lipo -create "$ARM_BIN" "$X86_BIN" -output "$UNI_BIN"
-          lipo -info "$UNI_BIN"
-
-      - name: Create universal .dmg
-        run: |
-          set -euo pipefail
-          VERSION="${{ needs.version.outputs.version }}"
-          DMG_NAME="${{ env.APP_NAME }}_${VERSION}_universal.dmg"
-
-          hdiutil create -volname "${{ env.APP_NAME }}" \
-            -srcfolder "universal/${{ env.APP_NAME }}.app" \
-            -ov -format UDZO \
-            "universal/$DMG_NAME"
-
-          echo "DMG_PATH=universal/$DMG_NAME" >> "$GITHUB_ENV"
-          echo "DMG_NAME=$DMG_NAME" >> "$GITHUB_ENV"
-
-      - name: Create universal updater tarball and sign
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
-        run: |
-          set -euo pipefail
-
-          # Create tar.gz of the universal .app
-          TARBALL="universal/${{ env.APP_NAME }}.app.tar.gz"
-          tar -czf "$TARBALL" -C universal "${{ env.APP_NAME }}.app"
-
-          # Install tauri-cli for signing
-          npm install -g @tauri-apps/cli
-
-          # Sign the tarball using Tauri's signer
-          # Use env vars directly — Tauri reads TAURI_SIGNING_PRIVATE_KEY and
-          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD automatically without needing --password flag
-          tauri signer sign "$TARBALL" --private-key "$TAURI_SIGNING_PRIVATE_KEY"
-
-          echo "TARBALL_PATH=$TARBALL" >> "$GITHUB_ENV"
-          echo "SIG_PATH=${TARBALL}.sig" >> "$GITHUB_ENV"
-
       - name: Generate release notes
-        id: notes
         run: |
-          set -euo pipefail
-
-          # Find the previous release tag
           PREV_TAG=$(git tag --sort=-version:refname | head -n 1 || echo "")
-
           if [ -z "$PREV_TAG" ]; then
-            # No previous tag — use all commits on main
             NOTES=$(git log --oneline --no-merges -20)
           else
             NOTES=$(git log --oneline --no-merges "${PREV_TAG}..HEAD")
           fi
-
-          # Write to file for the release body
           {
             echo "## What's Changed"
             echo ""
-            echo "$NOTES" | while IFS= read -r line; do
-              echo "- $line"
-            done
+            echo "$NOTES" | while IFS= read -r line; do echo "- $line"; done
             echo ""
             echo "---"
+            echo "**Apple Silicon (M1/M2/M3):** download \`*_aarch64.dmg\`"
+            echo "**Intel Mac:** download \`*_x86_64.dmg\`"
+            echo ""
             echo "*Built from \`$(git rev-parse --short HEAD)\` on $(date -u +%Y-%m-%d)*"
           } > release_notes.md
 
-          cat release_notes.md
-
       - name: Build latest.json
         run: |
-          set -euo pipefail
           VERSION="${{ needs.version.outputs.version }}"
           TAG="${{ needs.version.outputs.tag }}"
           REPO="refactoringhq/laputa-app"
 
-          # Read signatures
-          UNI_SIG=$(cat "${SIG_PATH}")
-          ARM_SIG=$(cat updater-aarch64/${{ env.APP_NAME }}.app.tar.gz.sig)
-          X86_SIG=$(cat updater-x86_64/${{ env.APP_NAME }}.app.tar.gz.sig)
+          ARM_SIG=$(cat updater-aarch64/*.app.tar.gz.sig)
+          X86_SIG=$(cat updater-x86_64/*.app.tar.gz.sig)
+          ARM_DMG=$(ls dmg-aarch64/*.dmg | xargs basename)
+          X86_DMG=$(ls dmg-x86_64/*.dmg | xargs basename)
 
-          # The universal tarball URL
-          UNI_URL="https://github.com/${REPO}/releases/download/${TAG}/${{ env.APP_NAME }}.app.tar.gz"
-
-          # Per-arch URLs (fallback)
-          ARM_URL="https://github.com/${REPO}/releases/download/${TAG}/${{ env.APP_NAME }}_aarch64.app.tar.gz"
-          X86_URL="https://github.com/${REPO}/releases/download/${TAG}/${{ env.APP_NAME }}_x86_64.app.tar.gz"
-
-          cat > latest.json << MANIFEST
+          cat > latest.json << EOF
           {
             "version": "${VERSION}",
             "notes": "See https://refactoringhq.github.io/laputa-app/ for full release notes.",
@@ -258,31 +156,18 @@ jobs:
             "platforms": {
               "darwin-aarch64": {
                 "signature": "${ARM_SIG}",
-                "url": "${ARM_URL}"
+                "url": "https://github.com/${REPO}/releases/download/${TAG}/${ARM_DMG}"
               },
               "darwin-x86_64": {
                 "signature": "${X86_SIG}",
-                "url": "${X86_URL}"
-              },
-              "darwin-universal": {
-                "signature": "${UNI_SIG}",
-                "url": "${UNI_URL}"
+                "url": "https://github.com/${REPO}/releases/download/${TAG}/${X86_DMG}"
               }
             }
           }
-          MANIFEST
+          EOF
+          echo "latest.json:"; cat latest.json
 
-          echo "latest.json:"
-          cat latest.json
-
-      - name: Rename per-arch updater artifacts
-        run: |
-          cp "updater-aarch64/${{ env.APP_NAME }}.app.tar.gz" "universal/${{ env.APP_NAME }}_aarch64.app.tar.gz"
-          cp "updater-aarch64/${{ env.APP_NAME }}.app.tar.gz.sig" "universal/${{ env.APP_NAME }}_aarch64.app.tar.gz.sig"
-          cp "updater-x86_64/${{ env.APP_NAME }}.app.tar.gz" "universal/${{ env.APP_NAME }}_x86_64.app.tar.gz"
-          cp "updater-x86_64/${{ env.APP_NAME }}.app.tar.gz.sig" "universal/${{ env.APP_NAME }}_x86_64.app.tar.gz.sig"
-
-      - name: Create GitHub Release
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.version.outputs.tag }}
@@ -291,16 +176,13 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ${{ env.DMG_PATH }}
-            ${{ env.TARBALL_PATH }}
-            ${{ env.SIG_PATH }}
-            universal/${{ env.APP_NAME }}_aarch64.app.tar.gz
-            universal/${{ env.APP_NAME }}_aarch64.app.tar.gz.sig
-            universal/${{ env.APP_NAME }}_x86_64.app.tar.gz
-            universal/${{ env.APP_NAME }}_x86_64.app.tar.gz.sig
-            latest.json
             dmg-aarch64/*.dmg
             dmg-x86_64/*.dmg
+            updater-aarch64/*.app.tar.gz
+            updater-aarch64/*.app.tar.gz.sig
+            updater-x86_64/*.app.tar.gz
+            updater-x86_64/*.app.tar.gz.sig
+            latest.json
 
   # ─────────────────────────────────────────────────────────────
   # Phase 4: Update GitHub Pages with release history
@@ -318,13 +200,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
           mkdir -p _site
-
-          # Fetch all releases as JSON
           gh api repos/${{ github.repository }}/releases --paginate > _site/releases.json
-
-          # Build the HTML page
           cat > _site/index.html << 'HTMLEOF'
           <!DOCTYPE html>
           <html lang="en">
@@ -334,38 +211,15 @@ jobs:
             <title>Laputa — Release History</title>
             <style>
               * { margin: 0; padding: 0; box-sizing: border-box; }
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #F7F6F3;
-                color: #37352F;
-                line-height: 1.6;
-                padding: 2rem;
-                max-width: 720px;
-                margin: 0 auto;
-              }
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F7F6F3; color: #37352F; line-height: 1.6; padding: 2rem; max-width: 720px; margin: 0 auto; }
               h1 { font-size: 1.75rem; font-weight: 600; margin-bottom: 0.5rem; }
               .subtitle { color: #787774; margin-bottom: 2rem; }
-              .release {
-                background: #fff;
-                border: 1px solid #E9E9E7;
-                border-radius: 8px;
-                padding: 1.25rem 1.5rem;
-                margin-bottom: 1rem;
-              }
+              .release { background: #fff; border: 1px solid #E9E9E7; border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
               .release h2 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.25rem; }
               .release .meta { font-size: 0.8125rem; color: #787774; margin-bottom: 0.75rem; }
               .release .body { font-size: 0.875rem; white-space: pre-wrap; }
-              .release .downloads {
-                margin-top: 0.75rem;
-                display: flex; gap: 0.5rem; flex-wrap: wrap;
-              }
-              .release .downloads a {
-                display: inline-block;
-                padding: 0.375rem 0.75rem;
-                background: #155DFF; color: #fff;
-                border-radius: 6px; text-decoration: none;
-                font-size: 0.8125rem; font-weight: 500;
-              }
+              .release .downloads { margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+              .release .downloads a { display: inline-block; padding: 0.375rem 0.75rem; background: #155DFF; color: #fff; border-radius: 6px; text-decoration: none; font-size: 0.8125rem; font-weight: 500; }
               .release .downloads a:hover { background: #1248CC; }
               .empty { color: #787774; text-align: center; padding: 3rem; }
             </style>
@@ -375,30 +229,17 @@ jobs:
             <p class="subtitle">Auto-updated on every release</p>
             <div id="releases"></div>
             <script>
-              fetch('releases.json').then(r => r.json()).then(releases => {
-                const el = document.getElementById('releases');
-                if (!releases.length) {
-                  el.innerHTML = '<p class="empty">No releases yet.</p>';
-                  return;
-                }
-                releases.forEach(r => {
-                  const date = new Date(r.published_at).toLocaleDateString('en-US', {
-                    year: 'numeric', month: 'long', day: 'numeric'
-                  });
-                  const dmgs = (r.assets || []).filter(a => a.name.endsWith('.dmg'));
-                  const links = dmgs.map(a =>
-                    '<a href="' + a.browser_download_url + '">' + a.name + '</a>'
-                  ).join('');
-                  const body = (r.body || '')
-                    .replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                    .replace(/^## /gm, '').replace(/^- /gm, '\u2022 ');
-                  const div = document.createElement('div');
-                  div.className = 'release';
-                  div.innerHTML =
-                    '<h2>' + (r.name || r.tag_name) + '</h2>' +
-                    '<div class="meta">' + date + ' \u00b7 ' + r.tag_name + '</div>' +
-                    '<div class="body">' + body + '</div>' +
-                    (links ? '<div class="downloads">' + links + '</div>' : '');
+              fetch('releases.json').then(r=>r.json()).then(releases=>{
+                const el=document.getElementById('releases');
+                if(!releases.length){el.innerHTML='<p class="empty">No releases yet.</p>';return;}
+                releases.forEach(r=>{
+                  const date=new Date(r.published_at).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+                  const dmgs=(r.assets||[]).filter(a=>a.name.endsWith('.dmg'));
+                  const links=dmgs.map(a=>'<a href="'+a.browser_download_url+'">'+a.name+'</a>').join('');
+                  const body=(r.body||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                  const div=document.createElement('div');
+                  div.className='release';
+                  div.innerHTML='<h2>'+(r.name||r.tag_name)+'</h2><div class="meta">'+date+' · '+r.tag_name+'</div><div class="body">'+body+'</div>'+(links?'<div class="downloads">'+links+'</div>':'');
                   el.appendChild(div);
                 });
               });

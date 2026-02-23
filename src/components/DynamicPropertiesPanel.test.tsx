@@ -128,6 +128,23 @@ describe('DynamicPropertiesPanel', () => {
     expect(screen.getByText('cadence')).toBeInTheDocument()
   })
 
+  it('skips is_a key since it is shown via TypeRow', () => {
+    render(
+      <DynamicPropertiesPanel
+        entry={makeEntry({ isA: 'Project' })}
+        content=""
+        frontmatter={{ is_a: 'Project', Status: 'Active' }}
+      />
+    )
+    // Type is shown via TypeRow, is_a should NOT appear as a separate editable property
+    const editableRows = screen.getAllByTestId('editable-property')
+    const editableLabels = editableRows.map(row => row.querySelector('span')?.textContent?.replace('×', '').trim())
+    expect(editableLabels).not.toContain('is_a')
+    // But Type row should still show
+    expect(screen.getByText('Type')).toBeInTheDocument()
+    expect(screen.getByText('Project')).toBeInTheDocument()
+  })
+
   it('renders boolean property as toggle', () => {
     render(
       <DynamicPropertiesPanel

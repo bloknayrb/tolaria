@@ -1,5 +1,5 @@
-/// Pure text-processing helpers for markdown content parsing.
-/// Snippet extraction, markdown stripping, date parsing, and string utilities.
+//! Pure text-processing helpers for markdown content parsing.
+//! Snippet extraction, markdown stripping, date parsing, and string utilities.
 
 /// Extract the title from a markdown file's content.
 /// Tries the first H1 heading (`# Title`), falls back to filename without extension.

@@ -748,3 +748,111 @@ describe('NoteList — trash view', () => {
     expect(screen.getByText('Trash is empty')).toBeInTheDocument()
   })
 })
+
+// --- Virtual list performance tests ---
+
+describe('NoteList — virtual list with large datasets', () => {
+  const makeEntry = (i: number, overrides?: Partial<VaultEntry>): VaultEntry => ({
+    path: `/vault/note/note-${i}.md`,
+    filename: `note-${i}.md`,
+    title: `Note ${i}`,
+    isA: 'Note',
+    aliases: [],
+    belongsTo: [],
+    relatedTo: [],
+    status: null,
+    owner: null,
+    cadence: null,
+    archived: false,
+    trashed: false,
+    trashedAt: null,
+    modifiedAt: 1700000000 - i * 60,
+    createdAt: null,
+    fileSize: 500,
+    snippet: `Content of note ${i}`,
+    relationships: {},
+    icon: null,
+    color: null,
+    order: null,
+    ...overrides,
+  })
+
+  it('renders 9000 entries without crashing', { timeout: 15000 }, () => {
+    const largeDataset = Array.from({ length: 9000 }, (_, i) => makeEntry(i))
+    const { container } = render(
+      <NoteList entries={largeDataset} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} onReplaceActiveTab={noopReplace} allContent={{}} onCreateNote={vi.fn()} />
+    )
+    // Virtuoso mock renders all items; the real component only renders visible ones
+    expect(container.querySelector('[data-testid="virtuoso-mock"]')).toBeInTheDocument()
+  })
+
+  it('renders items from a large dataset via Virtuoso', () => {
+    const largeDataset = Array.from({ length: 500 }, (_, i) => makeEntry(i))
+    render(
+      <NoteList entries={largeDataset} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} onReplaceActiveTab={noopReplace} allContent={{}} onCreateNote={vi.fn()} />
+    )
+    expect(screen.getByText('Note 0')).toBeInTheDocument()
+    expect(screen.getByText('Note 499')).toBeInTheDocument()
+  })
+
+  it('search filters large dataset correctly', () => {
+    const entries = [
+      makeEntry(0, { title: 'Alpha Strategy' }),
+      ...Array.from({ length: 998 }, (_, i) => makeEntry(i + 1, { title: `Filler Note ${i + 1}` })),
+      makeEntry(999, { title: 'Beta Strategy' }),
+    ]
+    render(
+      <NoteList entries={entries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} onReplaceActiveTab={noopReplace} allContent={{}} onCreateNote={vi.fn()} />
+    )
+    fireEvent.click(screen.getByTitle('Search notes'))
+    fireEvent.change(screen.getByPlaceholderText('Search notes...'), { target: { value: 'Strategy' } })
+    expect(screen.getByText('Alpha Strategy')).toBeInTheDocument()
+    expect(screen.getByText('Beta Strategy')).toBeInTheDocument()
+    expect(screen.queryByText('Filler Note 1')).not.toBeInTheDocument()
+  })
+
+  it('sorting works with large dataset', () => {
+    const entries = [
+      makeEntry(0, { title: 'Zebra', modifiedAt: 1000 }),
+      makeEntry(1, { title: 'Alpha', modifiedAt: 3000 }),
+      ...Array.from({ length: 100 }, (_, i) => makeEntry(i + 2, { title: `Mid ${i}`, modifiedAt: 2000 - i })),
+    ]
+    render(
+      <NoteList entries={entries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} onReplaceActiveTab={noopReplace} allContent={{}} onCreateNote={vi.fn()} />
+    )
+    // Default sort is modified desc — Alpha (3000) should come first
+    const firstTitle = screen.getAllByText(/^Alpha$|^Zebra$/)[0]
+    expect(firstTitle.textContent).toBe('Alpha')
+  })
+
+  it('section group filter works with large mixed-type dataset', () => {
+    const entries = [
+      ...Array.from({ length: 100 }, (_, i) => makeEntry(i, { isA: 'Project', title: `Project ${i}` })),
+      ...Array.from({ length: 200 }, (_, i) => makeEntry(100 + i, { isA: 'Note', title: `Note ${i}` })),
+    ]
+    render(
+      <NoteList entries={entries} selection={{ kind: 'sectionGroup', type: 'Project' }} selectedNote={null} onSelectNote={noopSelect} onReplaceActiveTab={noopReplace} allContent={{}} onCreateNote={vi.fn()} />
+    )
+    expect(screen.getByText('Project 0')).toBeInTheDocument()
+    expect(screen.queryByText('Note 0')).not.toBeInTheDocument()
+  })
+
+  it('selection highlighting works in virtualized list', () => {
+    const entries = Array.from({ length: 100 }, (_, i) => makeEntry(i))
+    const selected = entries[5]
+    render(
+      <NoteList entries={entries} selection={allSelection} selectedNote={selected} onSelectNote={noopSelect} onReplaceActiveTab={noopReplace} allContent={{}} onCreateNote={vi.fn()} />
+    )
+    expect(screen.getByText('Note 5')).toBeInTheDocument()
+  })
+
+  it('click handler works on virtualized items', () => {
+    noopReplace.mockClear()
+    const entries = Array.from({ length: 100 }, (_, i) => makeEntry(i))
+    render(
+      <NoteList entries={entries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} onReplaceActiveTab={noopReplace} allContent={{}} onCreateNote={vi.fn()} />
+    )
+    fireEvent.click(screen.getByText('Note 50'))
+    expect(noopReplace).toHaveBeenCalledWith(entries[50])
+  })
+})

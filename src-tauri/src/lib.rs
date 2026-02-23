@@ -137,11 +137,6 @@ fn clone_repo(url: String, token: String, local_path: String) -> Result<String, 
 }
 
 #[tauri::command]
-fn create_vault_dir(path: String) -> Result<(), String> {
-    std::fs::create_dir_all(&path).map_err(|e| format!("Failed to create directory: {e}"))
-}
-
-#[tauri::command]
 async fn github_device_flow_start() -> Result<DeviceFlowStart, String> {
     github::github_device_flow_start().await
 }
@@ -159,38 +154,6 @@ async fn github_get_user(token: String) -> Result<GitHubUser, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_create_vault_dir_creates_directory() {
-        let tmp = tempfile::tempdir().unwrap();
-        let vault_path = tmp.path().join("my-new-vault");
-        assert!(!vault_path.exists());
-
-        let result = create_vault_dir(vault_path.to_string_lossy().to_string());
-        assert!(result.is_ok());
-        assert!(vault_path.is_dir());
-    }
-
-    #[test]
-    fn test_create_vault_dir_nested_path() {
-        let tmp = tempfile::tempdir().unwrap();
-        let vault_path = tmp.path().join("deep/nested/vault");
-        assert!(!vault_path.exists());
-
-        let result = create_vault_dir(vault_path.to_string_lossy().to_string());
-        assert!(result.is_ok());
-        assert!(vault_path.is_dir());
-    }
-
-    #[test]
-    fn test_create_vault_dir_existing_dir_ok() {
-        let tmp = tempfile::tempdir().unwrap();
-        let vault_path = tmp.path().join("existing");
-        std::fs::create_dir(&vault_path).unwrap();
-
-        let result = create_vault_dir(vault_path.to_string_lossy().to_string());
-        assert!(result.is_ok());
-    }
 } // close mod tests
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -266,7 +229,6 @@ pub fn run() {
             github_list_repos,
             github_create_repo,
             clone_repo,
-            create_vault_dir,
             github_device_flow_start,
             github_device_flow_poll,
             github_get_user

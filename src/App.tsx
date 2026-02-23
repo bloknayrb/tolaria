@@ -149,7 +149,6 @@ function App() {
     }
   }, [addAndSwitchVault])
 
-
   useEffect(() => {
     if (!notes.activeTabPath) { setGitHistory([]); return }
     vault.loadGitHistory(notes.activeTabPath).then(setGitHistory)

@@ -1841,7 +1841,6 @@ const mockHandlers: Record<string, (args: any) => any> = {
   clone_repo: (args: { url: string; local_path: string }) => `Cloned to ${args.local_path}`,
   purge_trash: () => [],
   migrate_is_a_to_type: () => 0,
-  create_vault_dir: () => null,
   github_device_flow_start: (): DeviceFlowStart => {
     mockDeviceFlowPollCount = 0
     return {

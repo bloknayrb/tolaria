@@ -88,7 +88,7 @@ jobs:
       - name: Build Tauri app
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         run: |
           pnpm tauri build --target ${{ matrix.target }}
 
@@ -183,7 +183,7 @@ jobs:
       - name: Create universal updater tarball and sign
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         run: |
           set -euo pipefail
 
@@ -195,7 +195,9 @@ jobs:
           npm install -g @tauri-apps/cli
 
           # Sign the tarball using Tauri's signer
-          tauri signer sign "$TARBALL" --private-key "$TAURI_SIGNING_PRIVATE_KEY" --password "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
+          # Use env vars directly — Tauri reads TAURI_SIGNING_PRIVATE_KEY and
+          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD automatically without needing --password flag
+          tauri signer sign "$TARBALL" --private-key "$TAURI_SIGNING_PRIVATE_KEY"
 
           echo "TARBALL_PATH=$TARBALL" >> "$GITHUB_ENV"
           echo "SIG_PATH=${TARBALL}.sig" >> "$GITHUB_ENV"

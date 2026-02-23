@@ -92,25 +92,7 @@ describe('StatusBar', () => {
     expect(onOpenLocalFolder).toHaveBeenCalledOnce()
   })
 
-  it('shows "Create new vault" option in vault menu', () => {
-    render(
-      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onCreateNewVault={vi.fn()} />
-    )
-    fireEvent.click(screen.getByTitle('Switch vault'))
-    expect(screen.getByText('Create new vault')).toBeInTheDocument()
-  })
-
-  it('calls onCreateNewVault when clicking "Create new vault"', () => {
-    const onCreateNewVault = vi.fn()
-    render(
-      <StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onCreateNewVault={onCreateNewVault} />
-    )
-    fireEvent.click(screen.getByTitle('Switch vault'))
-    fireEvent.click(screen.getByText('Create new vault'))
-    expect(onCreateNewVault).toHaveBeenCalledOnce()
-  })
-
-  it('shows all three add-vault options together', () => {
+  it('shows add-vault options in vault menu', () => {
     render(
       <StatusBar
         noteCount={100}
@@ -118,13 +100,11 @@ describe('StatusBar', () => {
         vaults={vaults}
         onSwitchVault={vi.fn()}
         onOpenLocalFolder={vi.fn()}
-        onCreateNewVault={vi.fn()}
         onConnectGitHub={vi.fn()}
       />
     )
     fireEvent.click(screen.getByTitle('Switch vault'))
     expect(screen.getByText('Open local folder')).toBeInTheDocument()
-    expect(screen.getByText('Create new vault')).toBeInTheDocument()
     expect(screen.getByText('Connect GitHub repo')).toBeInTheDocument()
   })
 

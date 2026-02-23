@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Package, GitBranch, RefreshCw, Sparkles, FileText, Bell, Settings, FolderOpen, Check, Github, FolderPlus, CircleDot } from 'lucide-react'
+import { Package, GitBranch, RefreshCw, Sparkles, FileText, Bell, Settings, FolderOpen, Check, Github, CircleDot } from 'lucide-react'
 
 export interface VaultOption {
   label: string
@@ -14,7 +14,6 @@ interface StatusBarProps {
   onSwitchVault: (path: string) => void
   onOpenSettings?: () => void
   onOpenLocalFolder?: () => void
-  onCreateNewVault?: () => void
   onConnectGitHub?: () => void
   hasGitHub?: boolean
 }
@@ -37,7 +36,7 @@ function VaultMenuItem({ vault, isActive, onSelect }: { vault: VaultOption; isAc
   )
 }
 
-function VaultMenu({ vaults, vaultPath, onSwitchVault, onOpenLocalFolder, onCreateNewVault, onConnectGitHub, hasGitHub }: { vaults: VaultOption[]; vaultPath: string; onSwitchVault: (path: string) => void; onOpenLocalFolder?: () => void; onCreateNewVault?: () => void; onConnectGitHub?: () => void; hasGitHub?: boolean }) {
+function VaultMenu({ vaults, vaultPath, onSwitchVault, onOpenLocalFolder, onConnectGitHub, hasGitHub }: { vaults: VaultOption[]; vaultPath: string; onSwitchVault: (path: string) => void; onOpenLocalFolder?: () => void; onConnectGitHub?: () => void; hasGitHub?: boolean }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const activeVault = vaults.find((v) => v.path === vaultPath)
@@ -78,23 +77,6 @@ function VaultMenu({ vaults, vaultPath, onSwitchVault, onOpenLocalFolder, onCrea
               Open local folder
             </div>
           )}
-          {onCreateNewVault && (
-            <div
-              role="button"
-              onClick={() => { onCreateNewVault(); setOpen(false) }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 4,
-                cursor: 'pointer', background: 'transparent',
-                color: 'var(--muted-foreground)', fontSize: 12,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-              data-testid="vault-menu-create-new"
-            >
-              <FolderPlus size={12} />
-              Create new vault
-            </div>
-          )}
           {onConnectGitHub && (
             <div
               role="button"
@@ -122,11 +104,11 @@ const ICON_STYLE = { display: 'flex', alignItems: 'center', gap: 4 } as const
 const DISABLED_STYLE = { display: 'flex', alignItems: 'center', opacity: 0.4, cursor: 'not-allowed' } as const
 const SEP_STYLE = { color: 'var(--border)' } as const
 
-export function StatusBar({ noteCount, modifiedCount = 0, vaultPath, vaults, onSwitchVault, onOpenSettings, onOpenLocalFolder, onCreateNewVault, onConnectGitHub, hasGitHub }: StatusBarProps) {
+export function StatusBar({ noteCount, modifiedCount = 0, vaultPath, vaults, onSwitchVault, onOpenSettings, onOpenLocalFolder, onConnectGitHub, hasGitHub }: StatusBarProps) {
   return (
     <footer style={{ height: 30, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--sidebar)', borderTop: '1px solid var(--border)', padding: '0 8px', fontSize: 11, color: 'var(--muted-foreground)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <VaultMenu vaults={vaults} vaultPath={vaultPath} onSwitchVault={onSwitchVault} onOpenLocalFolder={onOpenLocalFolder} onCreateNewVault={onCreateNewVault} onConnectGitHub={onConnectGitHub} hasGitHub={hasGitHub} />
+        <VaultMenu vaults={vaults} vaultPath={vaultPath} onSwitchVault={onSwitchVault} onOpenLocalFolder={onOpenLocalFolder} onConnectGitHub={onConnectGitHub} hasGitHub={hasGitHub} />
         <span style={SEP_STYLE}>|</span>
         <span style={ICON_STYLE}><Package size={13} />v0.4.2</span>
         <span style={SEP_STYLE}>|</span>

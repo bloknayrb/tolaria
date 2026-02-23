@@ -166,12 +166,12 @@ describe('entryMatchesTarget', () => {
 describe('buildNoteContent', () => {
   it('generates frontmatter with status for regular types', () => {
     const content = buildNoteContent('My Note', 'Note', 'Active')
-    expect(content).toBe('---\ntitle: My Note\nis_a: Note\nstatus: Active\n---\n\n# My Note\n\n')
+    expect(content).toBe('---\ntitle: My Note\ntype: Note\nstatus: Active\n---\n\n# My Note\n\n')
   })
 
   it('omits status when null', () => {
     const content = buildNoteContent('AI', 'Topic', null)
-    expect(content).toBe('---\ntitle: AI\nis_a: Topic\n---\n\n# AI\n\n')
+    expect(content).toBe('---\ntitle: AI\ntype: Topic\n---\n\n# AI\n\n')
   })
 })
 
@@ -181,7 +181,7 @@ describe('resolveNewNote', () => {
     expect(entry.path).toBe('/Users/luca/Laputa/project/my-project.md')
     expect(entry.isA).toBe('Project')
     expect(entry.status).toBe('Active')
-    expect(content).toContain('is_a: Project')
+    expect(content).toContain('type: Project')
     expect(content).toContain('status: Active')
   })
 
@@ -208,13 +208,14 @@ describe('resolveNewType', () => {
     expect(entry.path).toBe('/Users/luca/Laputa/type/recipe.md')
     expect(entry.isA).toBe('Type')
     expect(entry.status).toBeNull()
-    expect(content).toContain('Is A: Type')
+    expect(content).toContain('type: Type')
     expect(content).toContain('# Recipe')
   })
 })
 
 describe('frontmatterToEntryPatch', () => {
   it.each([
+    ['type', 'Project', { isA: 'Project' }],
     ['is_a', 'Project', { isA: 'Project' }],
     ['status', 'Done', { status: 'Done' }],
     ['color', 'red', { color: 'red' }],

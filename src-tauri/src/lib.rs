@@ -101,6 +101,11 @@ fn purge_trash(vault_path: String) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+fn migrate_is_a_to_type(vault_path: String) -> Result<usize, String> {
+    vault::migrate_is_a_to_type(&vault_path)
+}
+
+#[tauri::command]
 fn get_settings() -> Result<Settings, String> {
     settings::get_settings()
 }
@@ -154,12 +159,23 @@ pub fn run() {
                 .map(|h| h.join("Laputa"))
                 .unwrap_or_default();
             if vault_path.is_dir() {
-                match vault::purge_trash(vault_path.to_str().unwrap_or_default()) {
+                let vp_str = vault_path.to_str().unwrap_or_default();
+                match vault::purge_trash(vp_str) {
                     Ok(deleted) if !deleted.is_empty() => {
                         log::info!("Purged {} trashed files on startup", deleted.len());
                     }
                     Err(e) => {
                         log::warn!("Failed to purge trash on startup: {}", e);
+                    }
+                    _ => {}
+                }
+                // Migrate legacy is_a/Is A frontmatter to type
+                match vault::migrate_is_a_to_type(vp_str) {
+                    Ok(n) if n > 0 => {
+                        log::info!("Migrated {} files from is_a to type on startup", n);
+                    }
+                    Err(e) => {
+                        log::warn!("Failed to migrate is_a on startup: {}", e);
                     }
                     _ => {}
                 }
@@ -183,6 +199,7 @@ pub fn run() {
             ai_chat,
             save_image,
             purge_trash,
+            migrate_is_a_to_type,
             get_settings,
             save_settings,
             github_list_repos,

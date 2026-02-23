@@ -112,7 +112,7 @@ const TYPE_FOLDER_MAP: Record<string, string> = {
 const NO_STATUS_TYPES = new Set(['Topic', 'Person'])
 
 const ENTRY_DELETE_MAP: Record<string, Partial<VaultEntry>> = {
-  is_a: { isA: null }, status: { status: null }, color: { color: null },
+  type: { isA: null }, is_a: { isA: null }, status: { status: null }, color: { color: null },
   icon: { icon: null }, owner: { owner: null }, cadence: { cadence: null },
   aliases: { aliases: [] }, belongs_to: { belongsTo: [] }, related_to: { relatedTo: [] },
   archived: { archived: false }, trashed: { trashed: false }, order: { order: null },
@@ -127,7 +127,7 @@ export function frontmatterToEntryPatch(
   const str = value != null ? String(value) : null
   const arr = Array.isArray(value) ? value.map(String) : []
   const updates: Record<string, Partial<VaultEntry>> = {
-    is_a: { isA: str }, status: { status: str }, color: { color: str },
+    type: { isA: str }, is_a: { isA: str }, status: { status: str }, color: { color: str },
     icon: { icon: str }, owner: { owner: str }, cadence: { cadence: str },
     aliases: { aliases: arr }, belongs_to: { belongsTo: arr }, related_to: { relatedTo: arr },
     archived: { archived: Boolean(value) }, trashed: { trashed: Boolean(value) },
@@ -142,7 +142,7 @@ function addEntryWithMock(entry: VaultEntry, content: string, addEntry: (e: Vaul
 }
 
 export function buildNoteContent(title: string, type: string, status: string | null): string {
-  const lines = ['---', `title: ${title}`, `is_a: ${type}`]
+  const lines = ['---', `title: ${title}`, `type: ${type}`]
   if (status) lines.push(`status: ${status}`)
   lines.push('---')
   return `${lines.join('\n')}\n\n# ${title}\n\n`
@@ -159,7 +159,7 @@ export function resolveNewNote(title: string, type: string): { entry: VaultEntry
 export function resolveNewType(typeName: string): { entry: VaultEntry; content: string } {
   const slug = slugify(typeName)
   const entry = buildNewEntry({ path: `/Users/luca/Laputa/type/${slug}.md`, slug, title: typeName, type: 'Type', status: null })
-  return { entry, content: `---\nIs A: Type\n---\n\n# ${typeName}\n\n` }
+  return { entry, content: `---\ntype: Type\n---\n\n# ${typeName}\n\n` }
 }
 
 function findWikilinkTarget(entries: VaultEntry[], target: string): VaultEntry | undefined {

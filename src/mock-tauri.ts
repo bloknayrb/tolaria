@@ -24,7 +24,7 @@ async function checkVaultApi(): Promise<boolean> {
 const MOCK_CONTENT: Record<string, string> = {
   '/Users/luca/Laputa/project/26q1-laputa-app.md': `---
 title: Build Laputa App
-is_a: Project
+type: Project
 status: Active
 owner: Luca Rossi
 tags: [Tauri, React, TypeScript, CodeMirror]
@@ -102,7 +102,7 @@ function loadVault(path: string): VaultEntry[] {
 
 \`\`\`yaml
 title: Some Title
-is_a: Project
+type: Project
 status: Active
 \`\`\`
 
@@ -130,7 +130,7 @@ And this is a second paragraph to verify inter-paragraph spacing is correct. Goo
 `,
   '/Users/luca/Laputa/responsibility/grow-newsletter.md': `---
 title: Grow Newsletter
-is_a: Responsibility
+type: Responsibility
 status: Active
 owner: Luca Rossi
 ---
@@ -160,7 +160,7 @@ The newsletter is the *engine* that drives everything else — sponsorships, con
 `,
   '/Users/luca/Laputa/responsibility/manage-sponsorships.md': `---
 title: Manage Sponsorships
-is_a: Responsibility
+type: Responsibility
 status: Active
 owner: Matteo Cellini
 ---
@@ -184,7 +184,7 @@ Revenue stream from newsletter sponsorships. [[Matteo Cellini]] handles day-to-d
 `,
   '/Users/luca/Laputa/procedure/write-weekly-essays.md': `---
 title: Write Weekly Essays
-is_a: Procedure
+type: Procedure
 status: Active
 owner: Luca Rossi
 cadence: Weekly
@@ -228,7 +228,7 @@ belongs_to:
 `,
   '/Users/luca/Laputa/procedure/run-sponsorships.md': `---
 title: Run Sponsorships
-is_a: Procedure
+type: Procedure
 status: Active
 owner: Matteo Cellini
 cadence: Weekly
@@ -250,7 +250,7 @@ belongs_to:
 `,
   '/Users/luca/Laputa/experiment/stock-screener.md': `---
 title: Stock Screener — EMA200 Wick Bounce
-is_a: Experiment
+type: Experiment
 status: Active
 owner: Luca Rossi
 domains: [Finance, Quantitative Analysis]
@@ -285,7 +285,7 @@ Stocks that wick below the 200-day EMA and close above it show a **statistically
 `,
   '/Users/luca/Laputa/note/facebook-ads-strategy.md': `---
 title: Facebook Ads Strategy
-is_a: Note
+type: Note
 belongs_to:
   - "[[project/26q1-laputa-app]]"
 related_to:
@@ -310,7 +310,7 @@ related_to:
 `,
   '/Users/luca/Laputa/note/budget-allocation.md': `---
 title: Budget Allocation
-is_a: Note
+type: Note
 belongs_to:
   - "[[project/26q1-laputa-app]]"
 ---
@@ -330,7 +330,7 @@ belongs_to:
 `,
   '/Users/luca/Laputa/person/matteo-cellini.md': `---
 title: Matteo Cellini
-is_a: Person
+type: Person
 aliases:
   - Matteo
 ---
@@ -350,7 +350,7 @@ Sponsorship manager — handles all sponsor relationships, proposals, and report
 `,
   '/Users/luca/Laputa/event/2026-02-14-laputa-app-kickoff.md': `---
 title: Laputa App Design Session
-is_a: Event
+type: Event
 related_to:
   - "[[project/26q1-laputa-app]]"
   - "[[person/matteo-cellini]]"
@@ -378,7 +378,7 @@ related_to:
 `,
   '/Users/luca/Laputa/topic/software-development.md': `---
 title: Software Development
-is_a: Topic
+type: Topic
 aliases:
   - Dev
   - Coding
@@ -396,7 +396,7 @@ A broad topic covering everything from frontend to systems programming.
 `,
   '/Users/luca/Laputa/topic/trading.md': `---
 title: Trading
-is_a: Topic
+type: Topic
 aliases:
   - Algorithmic Trading
 ---
@@ -413,7 +413,7 @@ aliases:
 `,
   '/Users/luca/Laputa/essay/on-writing-well.md': `---
 title: On Writing Well
-is_a: Essay
+type: Essay
 Belongs to:
   - "[[responsibility/grow-newsletter]]"
 ---
@@ -424,7 +424,7 @@ Good writing is lean and confident. Every sentence should serve a purpose.
 `,
   '/Users/luca/Laputa/essay/engineering-leadership-101.md': `---
 title: Engineering Leadership 101
-is_a: Essay
+type: Essay
 Belongs to:
   - "[[responsibility/grow-newsletter]]"
 Related to:
@@ -437,7 +437,7 @@ The transition from IC to manager is the hardest career shift in engineering.
 `,
   '/Users/luca/Laputa/essay/ai-agents-primer.md': `---
 title: AI Agents Primer
-is_a: Essay
+type: Essay
 Belongs to:
   - "[[responsibility/grow-newsletter]]"
 ---
@@ -448,7 +448,7 @@ AI agents are autonomous systems that can plan, execute, and adapt to achieve go
 `,
   // --- Type documents ---
   '/Users/luca/Laputa/type/project.md': `---
-Is A: Type
+type: Type
 order: 0
 ---
 
@@ -462,7 +462,7 @@ A **time-bound initiative** that advances a [[type/responsibility|Responsibility
 - **Belongs to**: Usually a Quarter or Responsibility
 `,
   '/Users/luca/Laputa/type/responsibility.md': `---
-Is A: Type
+type: Type
 order: 1
 ---
 
@@ -475,7 +475,7 @@ An **ongoing area of ownership** — something you're accountable for indefinite
 - **Owner**: The person accountable
 `,
   '/Users/luca/Laputa/type/procedure.md': `---
-Is A: Type
+type: Type
 order: 2
 ---
 
@@ -490,7 +490,7 @@ A **recurring process** tied to a [[type/responsibility|Responsibility]]. Proced
 - **Belongs to**: A Responsibility
 `,
   '/Users/luca/Laputa/type/experiment.md': `---
-Is A: Type
+type: Type
 order: 3
 ---
 
@@ -503,7 +503,7 @@ A **hypothesis-driven investigation** with a clear test and measurable outcome. 
 - **Owner**: The person running the experiment
 `,
   '/Users/luca/Laputa/type/person.md': `---
-Is A: Type
+type: Type
 order: 4
 ---
 
@@ -515,7 +515,7 @@ A **person** you interact with — team members, collaborators, contacts. People
 - **Aliases**: Alternative names for wikilink resolution
 `,
   '/Users/luca/Laputa/type/event.md': `---
-Is A: Type
+type: Type
 order: 5
 ---
 
@@ -527,7 +527,7 @@ A **point-in-time occurrence** — meetings, launches, milestones. Events are li
 - **Related to**: Entities this event is about
 `,
   '/Users/luca/Laputa/type/topic.md': `---
-Is A: Type
+type: Type
 order: 6
 ---
 
@@ -539,7 +539,7 @@ A **subject area** for categorization. Topics group related notes, projects, and
 - **Aliases**: Alternative names
 `,
   '/Users/luca/Laputa/type/essay.md': `---
-Is A: Type
+type: Type
 order: 7
 ---
 
@@ -551,7 +551,7 @@ A **published piece of writing** — newsletter essays, blog posts, articles. Es
 - **Belongs to**: Usually a Responsibility
 `,
   '/Users/luca/Laputa/type/note.md': `---
-Is A: Type
+type: Type
 order: 8
 ---
 
@@ -564,7 +564,7 @@ A **general-purpose document** — research notes, meeting notes, strategy docs.
 `,
   // --- Custom type documents (user-created types) ---
   '/Users/luca/Laputa/type/recipe.md': `---
-Is A: Type
+type: Type
 icon: cooking-pot
 color: orange
 ---
@@ -579,7 +579,7 @@ A **recipe** for cooking or baking. Recipes have ingredients, steps, and serving
 - **Cook Time**: Time to cook
 `,
   '/Users/luca/Laputa/type/book.md': `---
-Is A: Type
+type: Type
 icon: book-open
 color: green
 ---
@@ -596,7 +596,7 @@ A **book** you're reading or have read. Track reading progress, notes, and key t
   // --- Trashed entries ---
   '/Users/luca/Laputa/note/old-draft-notes.md': `---
 title: Old Draft Notes
-is_a: Note
+type: Note
 trashed: true
 trashed_at: ${new Date(Date.now() - 86400000 * 5).toISOString().slice(0, 10)}
 belongs_to:
@@ -609,7 +609,7 @@ Some rough draft content that is no longer relevant. Moving to trash.
 `,
   '/Users/luca/Laputa/note/deprecated-api-notes.md': `---
 title: Deprecated API Notes
-is_a: Note
+type: Note
 trashed: true
 trashed_at: ${new Date(Date.now() - 86400000 * 35).toISOString().slice(0, 10)}
 ---
@@ -620,7 +620,7 @@ Old API documentation for the v1 endpoint. Replaced by v2 docs.
 `,
   '/Users/luca/Laputa/experiment/failed-seo-experiment.md': `---
 title: Failed SEO Experiment
-is_a: Experiment
+type: Experiment
 status: Dropped
 trashed: true
 trashed_at: ${new Date(Date.now() - 86400000 * 10).toISOString().slice(0, 10)}
@@ -635,7 +635,7 @@ Tried programmatic SEO pages. Results were negligible — trashing this.
   // --- Archived entries ---
   '/Users/luca/Laputa/project/25q3-website-redesign.md': `---
 title: Website Redesign
-is_a: Project
+type: Project
 status: Done
 archived: true
 owner: Luca Rossi
@@ -654,7 +654,7 @@ Completed redesign of the company website. Migrated from WordPress to Next.js wi
 `,
   '/Users/luca/Laputa/experiment/twitter-thread-experiment.md': `---
 title: Twitter Thread Growth Experiment
-is_a: Experiment
+type: Experiment
 status: Done
 archived: true
 owner: Luca Rossi
@@ -676,7 +676,7 @@ Reverted to 1 high-quality thread per week. Archived this experiment.
   // --- Instances of custom types ---
   '/Users/luca/Laputa/recipe/pasta-carbonara.md': `---
 title: Pasta Carbonara
-is_a: Recipe
+type: Recipe
 servings: 4
 prep_time: 10 min
 cook_time: 20 min
@@ -695,7 +695,7 @@ Classic Roman pasta dish with eggs, pecorino, guanciale, and black pepper.
 `,
   '/Users/luca/Laputa/book/designing-data-intensive-applications.md': `---
 title: Designing Data-Intensive Applications
-is_a: Book
+type: Book
 author: Martin Kleppmann
 status: Finished
 rating: 5
@@ -1610,7 +1610,7 @@ index abc1234..def5678 100644
 @@ -1,8 +1,10 @@
  ---
  title: Example Note
- is_a: Note
+ type: Note
 +status: Active
  ---
 
@@ -1758,6 +1758,8 @@ const mockHandlers: Record<string, (args: any) => any> = {
     updated_at: new Date().toISOString(),
   }),
   clone_repo: (args: { url: string; local_path: string }) => `Cloned to ${args.local_path}`,
+  purge_trash: () => [],
+  migrate_is_a_to_type: () => 0,
 }
 
 export function isTauri(): boolean {

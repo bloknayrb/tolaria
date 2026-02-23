@@ -27,8 +27,8 @@ export const RELATIONSHIP_KEYS = new Set([
   'Advances', 'Parent', 'Children', 'Has', 'Notes',
 ])
 
-// Keys to skip showing in Properties
-const SKIP_KEYS = new Set(['aliases', 'notion_id', 'workspace', 'is_a', 'Is A'])
+// Keys to skip showing in Properties (handled by dedicated UI or internal)
+const SKIP_KEYS = new Set(['aliases', 'notion_id', 'workspace', 'title', 'type', 'is_a', 'Is A'])
 
 // eslint-disable-next-line react-refresh/only-export-components -- utility co-located with component
 export function containsWikilinks(value: FrontmatterValue): boolean {

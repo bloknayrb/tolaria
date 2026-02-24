@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::process::Command;
 
-/// GitHub OAuth App client ID. Replace with your registered GitHub App's client_id.
+/// GitHub App client ID for OAuth device flow.
+/// To set up: GitHub Settings → Developer settings → GitHub Apps → New GitHub App.
+/// Enable "Device authorization flow" under Optional features. Webhook can be disabled.
 const GITHUB_CLIENT_ID: &str = "Ov23liCuBz7Z5hKk6T8c";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -186,7 +188,8 @@ async fn github_device_flow_start_with_base(base_url: &str) -> Result<DeviceFlow
         let body = response.text().await.unwrap_or_default();
         if status.as_u16() == 404 {
             return Err(
-                "GitHub device flow not available. The OAuth App may not have device flow enabled."
+                "GitHub device flow not available. Ensure a GitHub App is registered with \
+                 'Device authorization flow' enabled (Settings → Developer settings → GitHub Apps)."
                     .to_string(),
             );
         }
@@ -818,6 +821,7 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(err.contains("device flow not available"));
+        assert!(err.contains("Device authorization flow"));
     }
 
     #[tokio::test]

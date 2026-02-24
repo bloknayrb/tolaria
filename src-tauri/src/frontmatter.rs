@@ -651,7 +651,10 @@ mod tests {
     fn test_split_frontmatter_empty_block() {
         // ---\n---\n  (no fields between opening and closing ---)
         let result = split_frontmatter("---\n---\n");
-        assert!(result.is_ok(), "split_frontmatter should handle empty frontmatter block");
+        assert!(
+            result.is_ok(),
+            "split_frontmatter should handle empty frontmatter block"
+        );
         let (fm, rest) = result.unwrap();
         assert_eq!(fm, "");
         assert_eq!(rest, "\n");
@@ -661,14 +664,20 @@ mod tests {
     fn test_split_frontmatter_empty_block_no_trailing_newline() {
         // ---\n---  (no trailing newline)
         let result = split_frontmatter("---\n---");
-        assert!(result.is_ok(), "split_frontmatter should handle empty frontmatter without trailing newline");
+        assert!(
+            result.is_ok(),
+            "split_frontmatter should handle empty frontmatter without trailing newline"
+        );
     }
 
     #[test]
     fn test_split_frontmatter_empty_block_with_body() {
         // ---\n---\n\n# Title\n
         let result = split_frontmatter("---\n---\n\n# Title\n");
-        assert!(result.is_ok(), "split_frontmatter should handle empty frontmatter with body");
+        assert!(
+            result.is_ok(),
+            "split_frontmatter should handle empty frontmatter with body"
+        );
         let (fm, rest) = result.unwrap();
         assert_eq!(fm, "");
         assert!(rest.contains("# Title"));
@@ -682,7 +691,10 @@ mod tests {
             "title",
             Some(FrontmatterValue::String("New Title".to_string())),
         );
-        assert!(result.is_ok(), "update_frontmatter_content should handle empty frontmatter block");
+        assert!(
+            result.is_ok(),
+            "update_frontmatter_content should handle empty frontmatter block"
+        );
         let updated = result.unwrap();
         assert!(updated.contains("title: New Title"));
     }

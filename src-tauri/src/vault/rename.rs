@@ -427,7 +427,10 @@ mod tests {
             expected_slug
         );
         assert!(!old_path.exists(), "old file should be removed");
-        assert!(Path::new(&result.new_path).exists(), "new file should exist");
+        assert!(
+            Path::new(&result.new_path).exists(),
+            "new file should exist"
+        );
 
         fs::read_to_string(&result.new_path).unwrap()
     }

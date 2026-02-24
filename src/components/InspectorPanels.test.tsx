@@ -188,6 +188,162 @@ describe('DynamicRelationshipsPanel', () => {
     )
     expect(screen.getByText('My Cool Project')).toBeInTheDocument()
   })
+
+  describe('relation editing', () => {
+    const onUpdateProperty = vi.fn()
+    const onDeleteProperty = vi.fn()
+
+    beforeEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('shows remove buttons on relation refs when editing is enabled', () => {
+      render(
+        <DynamicRelationshipsPanel
+          frontmatter={{ 'Belongs to': ['[[project/my-project]]'] }}
+          entries={entries}
+          onNavigate={onNavigate}
+          onUpdateProperty={onUpdateProperty}
+          onDeleteProperty={onDeleteProperty}
+        />
+      )
+      expect(screen.getByTestId('remove-relation-ref')).toBeInTheDocument()
+    })
+
+    it('does not show remove buttons when editing is disabled', () => {
+      render(
+        <DynamicRelationshipsPanel
+          frontmatter={{ 'Belongs to': ['[[project/my-project]]'] }}
+          entries={entries}
+          onNavigate={onNavigate}
+        />
+      )
+      expect(screen.queryByTestId('remove-relation-ref')).not.toBeInTheDocument()
+    })
+
+    it('calls onDeleteProperty when removing the last ref in a group', () => {
+      render(
+        <DynamicRelationshipsPanel
+          frontmatter={{ 'Belongs to': ['[[project/my-project]]'] }}
+          entries={entries}
+          onNavigate={onNavigate}
+          onUpdateProperty={onUpdateProperty}
+          onDeleteProperty={onDeleteProperty}
+        />
+      )
+      fireEvent.click(screen.getByTestId('remove-relation-ref'))
+      expect(onDeleteProperty).toHaveBeenCalledWith('Belongs to')
+    })
+
+    it('calls onUpdateProperty with remaining refs when removing one of many', () => {
+      render(
+        <DynamicRelationshipsPanel
+          frontmatter={{ 'Related to': ['[[project/my-project]]', '[[topic/ai]]'] }}
+          entries={entries}
+          onNavigate={onNavigate}
+          onUpdateProperty={onUpdateProperty}
+          onDeleteProperty={onDeleteProperty}
+        />
+      )
+      const removeButtons = screen.getAllByTestId('remove-relation-ref')
+      fireEvent.click(removeButtons[0]) // Remove first ref
+      expect(onUpdateProperty).toHaveBeenCalledWith('Related to', '[[topic/ai]]')
+    })
+
+    it('calls onUpdateProperty with string when two refs become one', () => {
+      render(
+        <DynamicRelationshipsPanel
+          frontmatter={{ 'Has': ['[[project/my-project]]', '[[topic/ai]]'] }}
+          entries={entries}
+          onNavigate={onNavigate}
+          onUpdateProperty={onUpdateProperty}
+          onDeleteProperty={onDeleteProperty}
+        />
+      )
+      const removeButtons = screen.getAllByTestId('remove-relation-ref')
+      fireEvent.click(removeButtons[0])
+      // Should pass a single string, not an array of one
+      expect(onUpdateProperty).toHaveBeenCalledWith('Has', '[[topic/ai]]')
+    })
+
+    it('shows inline add button for each relationship group when editing is enabled', () => {
+      render(
+        <DynamicRelationshipsPanel
+          frontmatter={{ 'Belongs to': ['[[project/my-project]]'] }}
+          entries={entries}
+          onNavigate={onNavigate}
+          onUpdateProperty={onUpdateProperty}
+          onDeleteProperty={onDeleteProperty}
+        />
+      )
+      expect(screen.getByTestId('add-relation-ref')).toBeInTheDocument()
+    })
+
+    it('opens inline add input when add button clicked', () => {
+      render(
+        <DynamicRelationshipsPanel
+          frontmatter={{ 'Belongs to': ['[[project/my-project]]'] }}
+          entries={entries}
+          onNavigate={onNavigate}
+          onUpdateProperty={onUpdateProperty}
+          onDeleteProperty={onDeleteProperty}
+        />
+      )
+      fireEvent.click(screen.getByTestId('add-relation-ref'))
+      expect(screen.getByTestId('add-relation-ref-input')).toBeInTheDocument()
+    })
+
+    it('adds a note to an existing relationship via inline add', () => {
+      render(
+        <DynamicRelationshipsPanel
+          frontmatter={{ 'Belongs to': ['[[project/my-project]]'] }}
+          entries={entries}
+          onNavigate={onNavigate}
+          onUpdateProperty={onUpdateProperty}
+          onDeleteProperty={onDeleteProperty}
+        />
+      )
+      fireEvent.click(screen.getByTestId('add-relation-ref'))
+      const input = screen.getByTestId('add-relation-ref-input')
+      fireEvent.change(input, { target: { value: 'AI' } })
+      fireEvent.keyDown(input, { key: 'Enter' })
+      expect(onUpdateProperty).toHaveBeenCalledWith('Belongs to', ['[[project/my-project]]', '[[AI]]'])
+    })
+
+    it('does not add duplicate refs', () => {
+      render(
+        <DynamicRelationshipsPanel
+          frontmatter={{ 'Belongs to': ['[[AI]]'] }}
+          entries={entries}
+          onNavigate={onNavigate}
+          onUpdateProperty={onUpdateProperty}
+          onDeleteProperty={onDeleteProperty}
+        />
+      )
+      fireEvent.click(screen.getByTestId('add-relation-ref'))
+      const input = screen.getByTestId('add-relation-ref-input')
+      fireEvent.change(input, { target: { value: 'AI' } })
+      fireEvent.keyDown(input, { key: 'Enter' })
+      expect(onUpdateProperty).not.toHaveBeenCalled()
+    })
+
+    it('closes inline add on Escape', () => {
+      render(
+        <DynamicRelationshipsPanel
+          frontmatter={{ 'Belongs to': ['[[project/my-project]]'] }}
+          entries={entries}
+          onNavigate={onNavigate}
+          onUpdateProperty={onUpdateProperty}
+          onDeleteProperty={onDeleteProperty}
+        />
+      )
+      fireEvent.click(screen.getByTestId('add-relation-ref'))
+      const input = screen.getByTestId('add-relation-ref-input')
+      fireEvent.keyDown(input, { key: 'Escape' })
+      expect(screen.queryByTestId('add-relation-ref-input')).not.toBeInTheDocument()
+      expect(screen.getByTestId('add-relation-ref')).toBeInTheDocument()
+    })
+  })
 })
 
 describe('BacklinksPanel', () => {

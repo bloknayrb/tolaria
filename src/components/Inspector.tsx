@@ -146,7 +146,12 @@ export function Inspector({
                 onAddProperty={onAddProperty ? handleAddProperty : undefined}
                 onNavigate={onNavigate}
               />
-              <DynamicRelationshipsPanel frontmatter={frontmatter} entries={entries} onNavigate={onNavigate} onAddProperty={onAddProperty ? handleAddProperty : undefined} />
+              <DynamicRelationshipsPanel
+                frontmatter={frontmatter} entries={entries} onNavigate={onNavigate}
+                onAddProperty={onAddProperty ? handleAddProperty : undefined}
+                onUpdateProperty={onUpdateFrontmatter ? handleUpdateProperty : undefined}
+                onDeleteProperty={onDeleteProperty ? handleDeleteProperty : undefined}
+              />
               <ReferencedByPanel items={referencedBy} onNavigate={onNavigate} />
               <BacklinksPanel backlinks={backlinks} onNavigate={onNavigate} />
               <GitHistoryPanel commits={gitHistory} onViewCommitDiff={onViewCommitDiff} />

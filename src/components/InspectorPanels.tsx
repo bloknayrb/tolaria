@@ -4,7 +4,7 @@ import { wikilinkTarget, wikilinkDisplay } from '../utils/wikilink'
 import type { VaultEntry, GitCommit } from '../types'
 import {
   Wrench, Flask, Target, ArrowsClockwise,
-  Users, CalendarBlank, Tag, FileText, StackSimple, Trash,
+  Users, CalendarBlank, Tag, FileText, StackSimple, Trash, X, Plus,
 } from '@phosphor-icons/react'
 import type { ParsedFrontmatter } from '../utils/frontmatter'
 import { RELATIONSHIP_KEYS, containsWikilinks } from './DynamicPropertiesPanel'
@@ -40,36 +40,49 @@ function StatusSuffix({ isArchived, isTrashed }: { isArchived: boolean; isTrashe
   return null
 }
 
-function LinkButton({ label, typeColor, bgColor, isArchived, isTrashed, onClick, title, TypeIcon }: {
+function LinkButton({ label, typeColor, bgColor, isArchived, isTrashed, onClick, onRemove, title, TypeIcon }: {
   label: string
   typeColor: string
   bgColor?: string
   isArchived: boolean
   isTrashed: boolean
   onClick: () => void
+  onRemove?: () => void
   title?: string
   TypeIcon: ComponentType<SVGAttributes<SVGSVGElement>>
 }) {
   const isDimmed = isArchived || isTrashed
   const color = isDimmed ? 'var(--muted-foreground)' : typeColor
   return (
-    <button
-      className="flex items-center justify-between gap-2 border-none text-left cursor-pointer hover:opacity-80"
-      style={{
-        background: isDimmed ? 'var(--muted)' : (bgColor ?? 'transparent'),
-        color, borderRadius: 6, padding: bgColor ? '6px 10px' : '4px 0',
-        fontSize: 12, fontWeight: 500, opacity: isDimmed ? 0.7 : 1,
-      }}
-      onClick={onClick}
-      title={title}
-    >
-      <span className="flex items-center gap-1 flex-1 truncate">
-        {isTrashed && <Trash size={12} className="shrink-0" />}
-        {label}
-        <StatusSuffix isArchived={isArchived} isTrashed={isTrashed} />
-      </span>
-      <TypeIcon width={14} height={14} className="shrink-0" style={{ color }} />
-    </button>
+    <div className="group/link flex items-center gap-1">
+      <button
+        className="flex flex-1 items-center justify-between gap-2 border-none text-left cursor-pointer hover:opacity-80 min-w-0"
+        style={{
+          background: isDimmed ? 'var(--muted)' : (bgColor ?? 'transparent'),
+          color, borderRadius: 6, padding: bgColor ? '6px 10px' : '4px 0',
+          fontSize: 12, fontWeight: 500, opacity: isDimmed ? 0.7 : 1,
+        }}
+        onClick={onClick}
+        title={title}
+      >
+        <span className="flex items-center gap-1 flex-1 truncate">
+          {isTrashed && <Trash size={12} className="shrink-0" />}
+          {label}
+          <StatusSuffix isArchived={isArchived} isTrashed={isTrashed} />
+        </span>
+        <TypeIcon width={14} height={14} className="shrink-0" style={{ color }} />
+      </button>
+      {onRemove && (
+        <button
+          className="shrink-0 border-none bg-transparent p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/link:opacity-100"
+          onClick={onRemove}
+          title="Remove from relation"
+          data-testid="remove-relation-ref"
+        >
+          <X size={12} />
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -94,8 +107,75 @@ function resolveRefProps(ref: string, entries: VaultEntry[]) {
   }
 }
 
-function RelationshipGroup({ label, refs, entries, onNavigate }: {
+function InlineAddNote({ entries, onAdd }: {
+  entries: VaultEntry[]
+  onAdd: (noteTitle: string) => void
+}) {
+  const [active, setActive] = useState(false)
+  const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const noteTitles = useMemo(() => entries.map(e => e.title), [entries])
+
+  const handleSubmit = useCallback(() => {
+    const trimmed = query.trim()
+    if (!trimmed) return
+    onAdd(trimmed)
+    setQuery('')
+    setActive(false)
+  }, [query, onAdd])
+
+  if (!active) {
+    return (
+      <button
+        className="mt-1 flex items-center gap-1 border-none bg-transparent p-0 text-muted-foreground cursor-pointer hover:text-foreground"
+        style={{ fontSize: 11 }}
+        onClick={() => { setActive(true); setTimeout(() => inputRef.current?.focus(), 0) }}
+        data-testid="add-relation-ref"
+      >
+        <Plus size={10} />
+        <span>Add</span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="mt-1 flex items-center gap-1">
+      <datalist id="inline-note-titles">{noteTitles.map(t => <option key={t} value={t} />)}</datalist>
+      <input
+        ref={inputRef}
+        autoFocus
+        className="flex-1 border border-border bg-transparent px-2 py-0.5 text-xs text-foreground"
+        style={{ borderRadius: 4, outline: 'none', minWidth: 0 }}
+        placeholder="Note title"
+        list="inline-note-titles"
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') handleSubmit()
+          else if (e.key === 'Escape') { setQuery(''); setActive(false) }
+        }}
+        data-testid="add-relation-ref-input"
+      />
+      <button
+        className="shrink-0 border-none bg-transparent p-0.5 text-muted-foreground hover:text-foreground"
+        onClick={handleSubmit}
+        disabled={!query.trim()}
+      >
+        <Plus size={12} />
+      </button>
+      <button
+        className="shrink-0 border-none bg-transparent p-0.5 text-muted-foreground hover:text-foreground"
+        onClick={() => { setQuery(''); setActive(false) }}
+      >
+        <X size={12} />
+      </button>
+    </div>
+  )
+}
+
+function RelationshipGroup({ label, refs, entries, onNavigate, onRemoveRef, onAddRef }: {
   label: string; refs: string[]; entries: VaultEntry[]; onNavigate: (target: string) => void
+  onRemoveRef?: (ref: string) => void; onAddRef?: (noteTitle: string) => void
 }) {
   if (refs.length === 0) return null
   return (
@@ -104,9 +184,17 @@ function RelationshipGroup({ label, refs, entries, onNavigate }: {
       <div className="flex flex-col gap-1">
         {refs.map((ref, idx) => {
           const props = resolveRefProps(ref, entries)
-          return <LinkButton key={`${ref}-${idx}`} {...props} onClick={() => onNavigate(props.target)} />
+          return (
+            <LinkButton
+              key={`${ref}-${idx}`}
+              {...props}
+              onClick={() => onNavigate(props.target)}
+              onRemove={onRemoveRef ? () => onRemoveRef(ref) : undefined}
+            />
+          )
         })}
       </div>
+      {onAddRef && <InlineAddNote entries={entries} onAdd={onAddRef} />}
     </div>
   )
 }
@@ -166,15 +254,48 @@ function AddRelationshipForm({ entries, onAddProperty }: {
   )
 }
 
-export function DynamicRelationshipsPanel({ frontmatter, entries, onNavigate, onAddProperty }: {
-  frontmatter: ParsedFrontmatter; entries: VaultEntry[]; onNavigate: (target: string) => void; onAddProperty?: (key: string, value: FrontmatterValue) => void
+export function DynamicRelationshipsPanel({ frontmatter, entries, onNavigate, onAddProperty, onUpdateProperty, onDeleteProperty }: {
+  frontmatter: ParsedFrontmatter; entries: VaultEntry[]; onNavigate: (target: string) => void
+  onAddProperty?: (key: string, value: FrontmatterValue) => void
+  onUpdateProperty?: (key: string, value: FrontmatterValue) => void
+  onDeleteProperty?: (key: string) => void
 }) {
   const relationshipEntries = useMemo(() => extractRelationshipRefs(frontmatter), [frontmatter])
+
+  const handleRemoveRef = useCallback((key: string, refToRemove: string) => {
+    if (!onUpdateProperty || !onDeleteProperty) return
+    const group = relationshipEntries.find(g => g.key === key)
+    if (!group) return
+    const remaining = group.refs.filter(r => r !== refToRemove)
+    if (remaining.length === 0) onDeleteProperty(key)
+    else if (remaining.length === 1) onUpdateProperty(key, remaining[0])
+    else onUpdateProperty(key, remaining)
+  }, [relationshipEntries, onUpdateProperty, onDeleteProperty])
+
+  const handleAddRef = useCallback((key: string, noteTitle: string) => {
+    if (!onUpdateProperty) return
+    const group = relationshipEntries.find(g => g.key === key)
+    const existing = group?.refs ?? []
+    const newRef = `[[${noteTitle}]]`
+    if (existing.includes(newRef)) return
+    const updated = [...existing, newRef]
+    if (updated.length === 1) onUpdateProperty(key, updated[0])
+    else onUpdateProperty(key, updated)
+  }, [relationshipEntries, onUpdateProperty])
+
+  const canEdit = !!onUpdateProperty && !!onDeleteProperty
+
   return (
     <div>
       {relationshipEntries.length === 0
         ? <p className="m-0 text-[13px] text-muted-foreground">No relationships</p>
-        : relationshipEntries.map(({ key, refs }) => <RelationshipGroup key={key} label={key} refs={refs} entries={entries} onNavigate={onNavigate} />)
+        : relationshipEntries.map(({ key, refs }) => (
+          <RelationshipGroup
+            key={key} label={key} refs={refs} entries={entries} onNavigate={onNavigate}
+            onRemoveRef={canEdit ? (ref) => handleRemoveRef(key, ref) : undefined}
+            onAddRef={canEdit ? (noteTitle) => handleAddRef(key, noteTitle) : undefined}
+          />
+        ))
       }
       {onAddProperty
         ? <AddRelationshipForm entries={entries} onAddProperty={onAddProperty} />

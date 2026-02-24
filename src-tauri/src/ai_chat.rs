@@ -184,8 +184,12 @@ mod tests {
         assert_eq!(extract_response_text(&resp), "");
     }
 
+    // Mutex to serialize env-var tests and avoid race conditions in parallel test runs
+    static ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn test_get_api_key_missing() {
+        let _guard = ENV_MUTEX.lock().unwrap();
         // Temporarily clear the env var
         let prev = std::env::var("ANTHROPIC_API_KEY").ok();
         unsafe {
@@ -206,6 +210,7 @@ mod tests {
 
     #[test]
     fn test_get_api_key_present() {
+        let _guard = ENV_MUTEX.lock().unwrap();
         let prev = std::env::var("ANTHROPIC_API_KEY").ok();
         unsafe {
             std::env::set_var("ANTHROPIC_API_KEY", "sk-test-key-123");

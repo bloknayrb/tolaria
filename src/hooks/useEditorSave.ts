@@ -45,8 +45,7 @@ export function useEditorSave({ updateVaultContent, setTabs, setToastMessage, on
   const handleSave = useCallback(async () => {
     try {
       const saved = await flushPending()
-      if (!saved) { setToastMessage('Nothing to save'); return }
-      setToastMessage('Saved')
+      setToastMessage(saved ? 'Saved' : 'Nothing to save')
       onAfterSave?.()
     } catch (err) {
       console.error('Save failed:', err)

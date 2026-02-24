@@ -165,9 +165,8 @@ function App() {
   }, [notes])
 
   const handleRenameTab = useCallback(async (path: string, newTitle: string) => {
-    // Save any pending content before renaming so the file on disk is up to date
     await savePendingForPath(path)
-    notes.handleRenameNote(path, newTitle, vaultPath, vault.replaceEntry)
+    await notes.handleRenameNote(path, newTitle, vaultPath, vault.replaceEntry).then(vault.loadModifiedFiles)
   }, [notes, vaultPath, vault, savePendingForPath])
 
   const { setViewMode } = useViewMode()

@@ -124,6 +124,21 @@ describe('useEditorSave', () => {
     expect(onAfterSave).toHaveBeenCalledOnce()
   })
 
+  it('calls onAfterSave even when nothing is pending (e.g. after rename)', async () => {
+    const onAfterSave = vi.fn()
+    const { result } = renderHook(() =>
+      useEditorSave({ updateVaultContent, setTabs, setToastMessage, onAfterSave })
+    )
+
+    // No content buffered — simulate Cmd+S after a rename that already flushed pending
+    await act(async () => {
+      await result.current.handleSave()
+    })
+
+    expect(setToastMessage).toHaveBeenCalledWith('Nothing to save')
+    expect(onAfterSave).toHaveBeenCalledOnce()
+  })
+
   it('does not call onAfterSave when save fails', async () => {
     mockInvokeFn.mockRejectedValueOnce(new Error('Disk full'))
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})

@@ -81,7 +81,15 @@ Tauri v2 + React + TypeScript desktop app. Reads a vault of markdown files with 
 
 ## Design File (every UI task)
 
-Every task with UI changes needs `design/<slug>.pen` — **additive only, NOT a copy of ui-design.pen**.
+Every task with UI changes needs a design file. Follow this process:
+
+1. **Open `ui-design.pen` first** — study existing frames to understand the visual language, spacing, and component style before designing anything new.
+2. **Design in light mode** — all existing designs use light mode. New frames must match. Never use dark mode for designs.
+3. **Create `design/<slug>.pen`** for the new feature — additive only, NOT a copy of ui-design.pen.
+4. **When merging to main** — merge your frames into `ui-design.pen` with proper layout:
+   - Place frames in a logical area (group by feature area, not stacked on top of each other)
+   - Leave at least 100px spacing between frames
+   - **Delete `design/<slug>.pen`** after merging — the frames now live in `ui-design.pen`
 
 ```bash
 mkdir -p design

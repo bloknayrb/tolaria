@@ -261,13 +261,13 @@ const DISPLAY_MODE_ICONS: Record<PropertyDisplayMode, typeof Type> = {
   text: Type, date: CalendarIcon, boolean: ToggleLeft, status: Circle, url: Link,
 }
 
-const ADD_INPUT_CLASS = "h-[26px] min-w-0 flex-1 rounded border border-border bg-muted px-1.5 text-[12px] text-foreground outline-none focus:border-primary"
+const ADD_INPUT_CLASS = "h-[26px] min-w-[60px] flex-1 rounded border border-border bg-muted px-1.5 text-[12px] text-foreground outline-none focus:border-primary"
 
 function AddBooleanInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const boolVal = value.toLowerCase() === 'true'
   return (
     <button
-      className="h-[26px] min-w-0 flex-1 rounded border border-border bg-muted px-1.5 text-[12px] text-secondary-foreground transition-colors hover:bg-accent"
+      className="h-[26px] min-w-[60px] flex-1 rounded border border-border bg-muted px-1.5 text-[12px] text-secondary-foreground transition-colors hover:bg-accent"
       onClick={() => onChange(boolVal ? 'false' : 'true')}
       data-testid="add-property-boolean-toggle"
     >
@@ -283,7 +283,7 @@ function AddDateInput({ value, onChange }: { value: string; onChange: (v: string
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className="inline-flex h-[26px] min-w-0 flex-1 cursor-pointer items-center gap-1 rounded border border-border bg-muted px-1.5 text-[12px] transition-colors hover:bg-accent"
+          className="inline-flex h-[26px] min-w-[60px] flex-1 cursor-pointer items-center gap-1 rounded border border-border bg-muted px-1.5 text-[12px] transition-colors hover:bg-accent"
           data-testid="add-property-date-trigger"
         >
           <CalendarIcon className="size-3 shrink-0 text-muted-foreground" />
@@ -307,9 +307,9 @@ function AddDateInput({ value, onChange }: { value: string; onChange: (v: string
 function AddStatusInput({ value, onChange, vaultStatuses }: { value: string; onChange: (v: string) => void; vaultStatuses: string[] }) {
   const [showDropdown, setShowDropdown] = useState(false)
   return (
-    <span className="relative inline-flex min-w-0 flex-1 items-center">
+    <span className="relative inline-flex min-w-[60px] flex-1 items-center">
       <button
-        className="inline-flex h-[26px] min-w-0 flex-1 cursor-pointer items-center gap-1 rounded border border-border bg-muted px-1.5 text-[12px] transition-colors hover:bg-accent"
+        className="inline-flex h-[26px] min-w-[60px] flex-1 cursor-pointer items-center gap-1 rounded border border-border bg-muted px-1.5 text-[12px] transition-colors hover:bg-accent"
         onClick={() => setShowDropdown(true)}
         data-testid="add-property-status-trigger"
       >
@@ -363,16 +363,16 @@ function AddPropertyForm({ onAdd, onCancel, vaultStatuses }: {
   }
 
   return (
-    <div className="mt-1 flex items-center gap-1.5 rounded px-1.5 py-1" data-testid="add-property-form">
+    <div className="mt-1 flex flex-wrap items-center gap-1.5 rounded px-1.5 py-1" data-testid="add-property-form">
       <input
-        className="h-[26px] w-[90px] shrink-0 rounded border border-border bg-muted px-1.5 text-[12px] text-foreground outline-none focus:border-primary"
+        className="h-[26px] w-20 shrink-0 rounded border border-border bg-muted px-1.5 text-[12px] text-foreground outline-none focus:border-primary"
         type="text" placeholder="Property name" value={newKey}
         onChange={(e) => setNewKey(e.target.value)} onKeyDown={handleKeyDown} autoFocus
       />
       <Select value={displayMode} onValueChange={(v) => handleModeChange(v as PropertyDisplayMode)}>
         <SelectTrigger
           size="sm"
-          className="h-[26px] w-[82px] shrink-0 gap-1 border-border bg-muted px-1.5 py-0 shadow-none"
+          className="h-[26px] w-[72px] shrink-0 gap-1 border-border bg-muted px-1.5 py-0 shadow-none"
           style={{ fontSize: 12, borderRadius: 4 }}
           data-testid="add-property-type-trigger"
         >
@@ -410,7 +410,7 @@ const TYPE_NONE = '__none__'
 function ReadOnlyType({ isA, customColorKey, onNavigate }: { isA?: string | null; customColorKey?: string | null; onNavigate?: (target: string) => void }) {
   if (!isA) return null
   return (
-    <div className="flex items-center justify-between px-1.5">
+    <div className="flex min-w-0 items-center justify-between gap-2 px-1.5">
       <span className="font-mono-overline shrink-0 text-muted-foreground">Type</span>
       {onNavigate ? (
         <button
@@ -439,7 +439,7 @@ function TypeSelector({ isA, customColorKey, availableTypes, typeColorKeys, onUp
     : availableTypes
 
   return (
-    <div className="flex items-center justify-between px-1.5" data-testid="type-selector">
+    <div className="flex min-w-0 items-center justify-between gap-2 px-1.5" data-testid="type-selector">
       <span className="font-mono-overline shrink-0 text-muted-foreground">Type</span>
       <Select value={currentValue} onValueChange={v => onUpdateProperty('type', v === TYPE_NONE ? null : v)}>
         <SelectTrigger
@@ -513,9 +513,9 @@ function PropertyRow({ propKey, value, editingKey, displayMode, autoMode, vaultS
   onDisplayModeChange: (key: string, mode: PropertyDisplayMode | null) => void
 }) {
   return (
-    <div className="group/prop flex items-center justify-between rounded px-1.5 py-0.5 transition-colors hover:bg-muted" data-testid="editable-property">
-      <span className="font-mono-overline flex shrink-0 items-center gap-1 text-muted-foreground">
-        {propKey}
+    <div className="group/prop flex min-w-0 items-center justify-between gap-2 rounded px-1.5 py-0.5 transition-colors hover:bg-muted" data-testid="editable-property">
+      <span className="font-mono-overline flex min-w-0 items-center gap-1 text-muted-foreground">
+        <span className="truncate">{propKey}</span>
         {onDelete && (
           <button className="border-none bg-transparent p-0 text-sm leading-none text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover/prop:opacity-100" onClick={() => onDelete(propKey)} title="Delete property">&times;</button>
         )}
@@ -528,9 +528,9 @@ function PropertyRow({ propKey, value, editingKey, displayMode, autoMode, vaultS
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between px-1.5" data-testid="readonly-property">
+    <div className="flex min-w-0 items-center justify-between gap-2 px-1.5" data-testid="readonly-property">
       <span className="font-mono-overline shrink-0" style={{ color: 'var(--text-muted)' }}>{label}</span>
-      <span className="text-right text-[12px]" style={{ color: 'var(--text-muted)' }}>{value}</span>
+      <span className="min-w-0 truncate text-right text-[12px]" style={{ color: 'var(--text-muted)' }}>{value}</span>
     </div>
   )
 }

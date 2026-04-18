@@ -1,1 +1,11 @@
-{}
+{
+  "version": "2026.4.18",
+  "notes": "Stable release. See https://refactoringhq.github.io/tolaria/ for full release notes.",
+  "pub_date": "2026-04-18T13:52:09Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSY3I3L2VKNUJ0cUViWWhadmEyWTBFaUdMb0FtelQ0UTA4NXhwV3crRThsM2xqNnBIZFBVaThhREdCdkozUkJRNkRUMjZFR3JwRkRraUtLQXFKZGIvU01MeE5hUGVlWWd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc2NTIwMzExCWZpbGU6VG9sYXJpYS5hcHAudGFyLmd6CjJxRmlFellhK0xRZVJZSm1LMjBzYTNGZ0ZmNHJhTEMyV0todkRPcU9BYTlYUDhkOC9FUG5QK0h0RjM4eG5DS1ZVZzRTUkZLNXJHRC9TcU1JT3ZBbEF3PT0K",
+      "url": "https://github.com/refactoringhq/tolaria/releases/download/stable-v2026.4.18/Tolaria.app.tar.gz"
+    }
+  }
+}

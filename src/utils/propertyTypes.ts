@@ -116,7 +116,8 @@ export function getEffectiveDisplayMode(
 function resolveDateFromValue(value: string): Date | null {
   const isoMatch = value.match(ISO_DATE_RE)
   if (isoMatch) {
-    const date = new Date(isoMatch[0])
+    const [y, m, d] = isoMatch[0].split('T')[0].split('-').map(Number)
+    const date = new Date(y, m - 1, d)
     return Number.isNaN(date.getTime()) ? null : date
   }
 

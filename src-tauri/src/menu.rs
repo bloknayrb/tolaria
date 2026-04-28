@@ -1,3 +1,7 @@
+#[cfg(not(target_os = "macos"))]
+use crate::window_state::MAIN_WINDOW_LABEL;
+#[cfg(not(target_os = "macos"))]
+use tauri::{menu::MenuEvent, Manager};
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder, MenuItemKind, Submenu, SubmenuBuilder},
     App, AppHandle, Emitter,
@@ -145,21 +149,27 @@ fn build_app_menu(app: &App) -> MenuResult {
         .id(APP_CHECK_FOR_UPDATES)
         .build(app)?;
 
-    Ok(SubmenuBuilder::new(app, "Tolaria")
+    let builder = SubmenuBuilder::new(app, "Tolaria")
         .about(None)
         .separator()
         .item(&check_updates_item)
         .separator()
         .item(&settings_item)
-        .separator()
-        .services()
-        .separator()
-        .hide()
-        .hide_others()
-        .show_all()
-        .separator()
-        .quit()
-        .build()?)
+        .separator();
+
+    #[cfg(target_os = "macos")]
+    let builder = builder.services().separator();
+
+    #[cfg(not(target_os = "linux"))]
+    let builder = builder.hide().hide_others();
+
+    #[cfg(target_os = "macos")]
+    let builder = builder.show_all();
+
+    #[cfg(not(target_os = "linux"))]
+    let builder = builder.separator();
+
+    Ok(builder.quit().build()?)
 }
 
 fn build_file_menu(app: &App) -> MenuResult {
@@ -454,6 +464,21 @@ pub fn setup_menu(app: &App) -> Result<(), Box<dyn std::error::Error>> {
         let _ = emit_custom_menu_event(app_handle, id);
     });
 
+    // On Windows and Linux, menus are attached to windows, so only
+    // WebviewWindow::on_menu_event receives clicks. App::on_menu_event
+    // is the correct (and sufficient) handler on macOS, where menus are app-wide.
+    #[cfg(not(target_os = "macos"))]
+    {
+        let window = app.get_webview_window(MAIN_WINDOW_LABEL).ok_or_else(|| {
+            format!("setup_menu: window '{MAIN_WINDOW_LABEL}' not found; menu events will not fire")
+        })?;
+        let app_handle = app.handle().clone();
+        window.on_menu_event(move |_window, event: MenuEvent| {
+            let id = event.id().0.as_str();
+            let _ = emit_custom_menu_event(&app_handle, id);
+        });
+    }
+
     Ok(())
 }
 
@@ -528,6 +553,7 @@ mod tests {
             FILE_NEW_NOTE,
             FILE_NEW_TYPE,
             FILE_QUICK_OPEN,
+            FILE_QUICK_OPEN_ALIAS,
             FILE_SAVE,
             EDIT_FIND_IN_NOTE,
             EDIT_REPLACE_IN_NOTE,
@@ -550,9 +576,12 @@ mod tests {
             GO_ALL_NOTES,
             GO_ARCHIVED,
             GO_CHANGES,
+            GO_INBOX,
+            NOTE_TOGGLE_ORGANIZED,
             NOTE_ARCHIVE,
             NOTE_DELETE,
             NOTE_OPEN_IN_NEW_WINDOW,
+            NOTE_RESTORE_DELETED,
             VAULT_OPEN,
             VAULT_REMOVE,
             VAULT_RESTORE_GETTING_STARTED,
@@ -563,6 +592,7 @@ mod tests {
             VAULT_VIEW_CHANGES,
             VAULT_INSTALL_MCP,
             VAULT_RELOAD,
+            VAULT_REPAIR,
         ];
         for id in &expected {
             assert!(CUSTOM_IDS.contains(id), "missing custom ID: {id}");

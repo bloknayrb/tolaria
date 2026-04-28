@@ -1177,6 +1177,7 @@ function App() {
       await restartApp()
       return
     }
+    setToastMessage('Checking for updates…')
     const result = await updateActions.checkForUpdates()
     if (result.kind === 'up-to-date') {
       const checkedChannel = normalizeReleaseChannel(settings.release_channel)

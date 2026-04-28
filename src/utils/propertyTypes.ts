@@ -138,8 +138,9 @@ export function formatDateValue(value: string): string {
 export function toISODate(value: string): string {
   const isoMatch = value.match(ISO_DATE_RE)
   if (isoMatch) {
-    const d = new Date(isoMatch[0])
-    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0]
+    const [y, m, d] = isoMatch[0].split('T')[0].split('-').map(Number)
+    const date = new Date(y, m - 1, d)
+    if (!isNaN(date.getTime())) return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
   }
   return value
 }
